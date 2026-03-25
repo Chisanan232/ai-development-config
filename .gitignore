@@ -1,0 +1,51 @@
+#### Cache
+## MacOS
+.DS_Store
+## Python cache
+__pycache__
+## UV
+.venv/
+## PyEnv
+.python-version
+## PyTest
+.pytest_cache/
+## PyLint
+.pypirc
+## MyPy
+.mypy_cache/
+
+#### Editor and backup files
+## Backup files
+*.bak*
+*.orig
+*.backup*
+## Editor temporary files
+*~
+.#*
+\#*#
+.*.swp
+.*.swo
+
+#### Running result of tools
+## Docummentation
+site/
+## Test coverage
+.coverage
+.coverage.*
+coverage.xml
+## Package Python code
+build/
+dist/
+*.egg-info/
+
+## Configuration
+.env*
+!.env*example
+.idea/
+
+## Script
+#scripts/
+
+## Some usage of this project
+# Prompts for AI tools
+.ai/
