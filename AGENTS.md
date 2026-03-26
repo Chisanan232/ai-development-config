@@ -262,6 +262,84 @@ When CI fails:
 
 ---
 
+## MCP-Backed Source-of-Truth Systems
+
+**[PROJECT-SPECIFIC]** Document which external systems are the source of truth for different aspects of the project, and how they are accessed via MCP (Model Context Protocol).
+
+**Note:** MCP servers enable Windsurf Cascade to access external systems for real-time context. See `docs/mcp-integration.md` and `docs/mcp-setup-guide.md` for setup instructions.
+
+### PR State Source of Truth
+
+* **System**: [e.g., GitHub, GitLab, Bitbucket]
+* **MCP Server**: [e.g., github]
+* **Capability**: code_repository
+* **What it provides**: PR status, checks, reviews, comments
+* **Used by**: CI failure triage, code review prep, release readiness
+
+### CI State Source of Truth
+
+* **System**: [e.g., GitHub Actions, GitLab CI, Jenkins]
+* **MCP Server**: [e.g., github]
+* **Capability**: code_repository
+* **What it provides**: Workflow runs, job status, logs
+* **Used by**: CI failure triage, deployment verification
+
+### Static Analysis Source of Truth
+
+* **System**: [e.g., SonarQube, CodeClimate, Snyk, or "None"]
+* **MCP Server**: [e.g., sonarqube, or "Not configured"]
+* **Capability**: static_analysis
+* **What it provides**: Code quality issues, security vulnerabilities
+* **Used by**: CI failure triage, code review prep, security fixes
+
+### Coverage Source of Truth
+
+* **System**: [e.g., Codecov, Coveralls, SonarQube, or "Local only"]
+* **MCP Server**: [e.g., codecov, or "Not configured"]
+* **Capability**: coverage_reporting
+* **What it provides**: Coverage percentages, uncovered lines, trends
+* **Used by**: Coverage regression repair, CI failure triage
+
+### Task/Ticket Source of Truth
+
+* **System**: [e.g., JIRA, Linear, ClickUp, GitHub Issues]
+* **MCP Server**: [e.g., jira, or "Not configured"]
+* **Capability**: issue_tracking
+* **What it provides**: Issue details, status, requirements
+* **Used by**: Feature implementation, bug fixes, work tracking
+
+### Team Notification Channel
+
+* **System**: [e.g., Slack, Microsoft Teams, Discord]
+* **MCP Server**: [e.g., slack, or "Not configured"]
+* **Capability**: communication
+* **What it provides**: Messaging, notifications
+* **Channel**: [e.g., #engineering, #dev-team]
+* **Used by**: Feature completion, CI failures, releases, alerts
+
+### Observability Source of Truth (Optional)
+
+* **System**: [e.g., Datadog, New Relic, Grafana, Sentry, or "None"]
+* **MCP Server**: [e.g., datadog, or "Not configured"]
+* **Capability**: observability
+* **What it provides**: Metrics, logs, errors, alerts
+* **Used by**: Production issue investigation, performance analysis
+
+### Knowledge Base (Optional)
+
+* **System**: [e.g., Confluence, Notion, Internal Wiki, or "None"]
+* **MCP Server**: [e.g., confluence, or "Not configured"]
+* **Capability**: knowledge_search
+* **What it provides**: Documentation, best practices, decisions
+* **Used by**: Context gathering, pattern discovery, onboarding
+
+**MCP Configuration:**
+* **Location**: `~/.codeium/windsurf/mcp_config.json` (global) or `.windsurf/mcp_config.json` (project)
+* **Example**: See `examples/mcp_config.json`
+* **Setup guide**: See `docs/mcp-setup-guide.md`
+
+---
+
 ## Communication and Collaboration
 
 **[ORG POLICY]** Define how the team communicates:
@@ -270,6 +348,8 @@ When CI fails:
 * **Chat platform**: [e.g., Slack, Discord, Microsoft Teams]
 * **Documentation**: [e.g., Confluence, Notion, GitHub Wiki]
 * **Code review tool**: [e.g., GitHub PR reviews, GitLab MR reviews]
+
+**Note:** Also document these systems in the "MCP-Backed Source-of-Truth Systems" section above if using MCP integration.
 
 ---
 
@@ -298,3 +378,6 @@ When adapting this template for your repository, ensure you:
 - [ ] Update CI/CD expectations to match your pipeline
 - [ ] Define actual coverage thresholds
 - [ ] Specify actual dependency management process
+- [ ] Configure MCP servers for external systems (see `docs/mcp-setup-guide.md`)
+- [ ] Document MCP-backed source-of-truth systems
+- [ ] Test MCP integration with essential servers (GitHub, Slack)
