@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Example MCP configuration for Windsurf Cascade - Python-first engineering workflow",
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "disabled": false,
+      "metadata": {
+        "capability": "code_repository",
+        "priority": "essential",
+        "description": "Source of truth for code, PRs, and CI state"
+      }
+    },
+    "slack": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-slack"
+      ],
+      "env": {
+        "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
+        "SLACK_TEAM_ID": "${SLACK_TEAM_ID}"
+      },
+      "disabled": false,
+      "metadata": {
+        "capability": "communication",
+        "priority": "recommended",
+        "description": "Team notifications and status updates"
+      }
+    },
+    "sonarqube": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sonarqube"
+      ],
+      "env": {
+        "SONARQUBE_URL": "${SONARQUBE_URL}",
+        "SONARQUBE_TOKEN": "${SONARQUBE_TOKEN}",
+        "SONARQUBE_PROJECT_KEY": "${SONARQUBE_PROJECT_KEY}"
+      },
+      "disabled": true,
+      "metadata": {
+        "capability": "static_analysis",
+        "priority": "recommended",
+        "description": "Code quality and security analysis",
+        "note": "[PROJECT-SPECIFIC] Enable if using SonarQube. Verify server implementation exists."
+      }
+    },
+    "codecov": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-codecov"
+      ],
+      "env": {
+        "CODECOV_TOKEN": "${CODECOV_TOKEN}",
+        "CODECOV_REPO": "${CODECOV_REPO}"
+      },
+      "disabled": true,
+      "metadata": {
+        "capability": "coverage_reporting",
+        "priority": "recommended",
+        "description": "Test coverage tracking and reporting",
+        "note": "[PROJECT-SPECIFIC] Enable if using Codecov. Verify server implementation exists."
+      }
+    },
+    "jira": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-jira"
+      ],
+      "env": {
+        "JIRA_URL": "${JIRA_URL}",
+        "JIRA_EMAIL": "${JIRA_EMAIL}",
+        "JIRA_API_TOKEN": "${JIRA_API_TOKEN}"
+      },
+      "disabled": true,
+      "metadata": {
+        "capability": "issue_tracking",
+        "priority": "optional",
+        "description": "Task and issue tracking",
+        "note": "[PROJECT-SPECIFIC] Enable if using JIRA. Verify server implementation exists."
+      }
+    },
+    "clickup": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-clickup"
+      ],
+      "env": {
+        "CLICKUP_API_TOKEN": "${CLICKUP_API_TOKEN}",
+        "CLICKUP_TEAM_ID": "${CLICKUP_TEAM_ID}"
+      },
+      "disabled": true,
+      "metadata": {
+        "capability": "issue_tracking",
+        "priority": "optional",
+        "description": "Task and issue tracking (alternative to JIRA)",
+        "note": "[PROJECT-SPECIFIC] Enable if using ClickUp. Verify server implementation exists."
+      }
+    },
+    "datadog": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-datadog"
+      ],
+      "env": {
+        "DATADOG_API_KEY": "${DATADOG_API_KEY}",
+        "DATADOG_APP_KEY": "${DATADOG_APP_KEY}",
+        "DATADOG_SITE": "${DATADOG_SITE}"
+      },
+      "disabled": true,
+      "metadata": {
+        "capability": "observability",
+        "priority": "optional",
+        "description": "Production monitoring and metrics",
+        "note": "[PROJECT-SPECIFIC] Enable if using Datadog. Verify server implementation exists."
+      }
+    },
+    "sentry": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sentry"
+      ],
+      "env": {
+        "SENTRY_AUTH_TOKEN": "${SENTRY_AUTH_TOKEN}",
+        "SENTRY_ORG": "${SENTRY_ORG}",
+        "SENTRY_PROJECT": "${SENTRY_PROJECT}"
+      },
+      "disabled": true,
+      "metadata": {
+        "capability": "observability",
+        "priority": "optional",
+        "description": "Error tracking and monitoring",
+        "note": "[PROJECT-SPECIFIC] Enable if using Sentry. Verify server implementation exists."
+      }
+    },
+    "confluence": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-confluence"
+      ],
+      "env": {
+        "CONFLUENCE_URL": "${CONFLUENCE_URL}",
+        "CONFLUENCE_EMAIL": "${CONFLUENCE_EMAIL}",
+        "CONFLUENCE_API_TOKEN": "${CONFLUENCE_API_TOKEN}"
+      },
+      "disabled": true,
+      "metadata": {
+        "capability": "knowledge_search",
+        "priority": "optional",
+        "description": "Documentation and knowledge base search",
+        "note": "[PROJECT-SPECIFIC] Enable if using Confluence. Verify server implementation exists."
+      }
+    }
+  },
+  "notes": {
+    "important": [
+      "[VERIFY SERVER IMPLEMENTATION] The MCP server package names above are examples. Verify actual implementations exist before use.",
+      "[PROJECT-SPECIFIC] Enable only servers for systems you actually use.",
+      "[NEVER COMMIT SECRETS] Use environment variables (${VAR_NAME}) for all credentials.",
+      "[TOOL BUDGET] Windsurf has a limit on total enabled tools. Start with 2-3 essential servers.",
+      "[LOCATION] Copy this to ~/.codeium/windsurf/mcp_config.json (global) or .windsurf/mcp_config.json (project, not recommended for secrets)."
+    ],
+    "setup_steps": [
+      "1. Copy this file to ~/.codeium/windsurf/mcp_config.json",
+      "2. Set environment variables in ~/.zshrc or ~/.bashrc",
+      "3. Enable only essential servers initially (github, slack)",
+      "4. Test each server before enabling the next",
+      "5. Verify Windsurf recognizes all tools",
+      "6. Update AGENTS.md with MCP source-of-truth mappings"
+    ],
+    "environment_variables": {
+      "github": [
+        "GITHUB_TOKEN: GitHub Personal Access Token with repo, read:org, workflow scopes"
+      ],
+      "slack": [
+        "SLACK_BOT_TOKEN: Slack Bot User OAuth Token (xoxb-...)",
+        "SLACK_TEAM_ID: Slack Team/Workspace ID (T...)"
+      ],
+      "sonarqube": [
+        "SONARQUBE_URL: SonarQube server URL",
+        "SONARQUBE_TOKEN: SonarQube user token",
+        "SONARQUBE_PROJECT_KEY: Project key in SonarQube"
+      ],
+      "codecov": [
+        "CODECOV_TOKEN: Codecov API token",
+        "CODECOV_REPO: Repository in owner/repo format"
+      ],
+      "jira": [
+        "JIRA_URL: JIRA instance URL (https://your-domain.atlassian.net)",
+        "JIRA_EMAIL: Your JIRA email",
+        "JIRA_API_TOKEN: JIRA API token"
+      ]
+    }
+  }
+}
