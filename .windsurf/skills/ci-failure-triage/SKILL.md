@@ -74,6 +74,36 @@ Review CI output and categorize the failure:
 * Resource exhaustion
 * Service unavailability
 
+### Phase 1.5: Gather Context from External Systems (If MCP Configured)
+
+**If MCP servers are configured, gather additional context:**
+
+#### Read PR and CI State (code_repository capability)
+* Check which CI checks failed
+* Read failure messages and logs
+* Identify affected files and tests
+* Review recent commits
+
+#### Read Static Analysis Results (static_analysis capability, if available)
+* Check for new quality issues
+* Check for security vulnerabilities
+* Identify code smells
+* Review quality gate status
+
+#### Read Coverage Data (coverage_reporting capability, if available)
+* Check coverage percentage
+* Identify uncovered lines
+* Compare with previous coverage
+* Identify coverage regression
+
+**If MCP is not configured:**
+* Manually access CI logs
+* Manually check static analysis reports
+* Manually review coverage reports
+* Proceed with manual triage
+
+**Consult AGENTS.md** for MCP source-of-truth system mappings.
+
 ### Phase 2: Reproduce Locally
 
 **Critical step: Always try to reproduce the failure locally.**
@@ -325,6 +355,18 @@ Before considering the fix complete:
 * **For Python type errors**: Use `python-mypy-debugging` skill
 * **For Python lint errors**: Use `python-ruff-fixing` skill
 * **For pre-commit failures**: Use `python-precommit-repair` skill
+
+## [PROJECT-SPECIFIC MCP MAPPING]
+
+For projects with MCP configured, capabilities map to:
+
+* **code_repository**: Use to read GitHub/GitLab PR checks and CI logs
+* **static_analysis**: Use to read SonarQube/CodeClimate quality gate
+* **coverage_reporting**: Use to read Codecov/Coveralls reports
+* **communication**: Use to notify team of CI failures (optional)
+* **issue_tracking**: Use to update related issues (optional)
+
+Consult AGENTS.md for your project's specific MCP configuration and source-of-truth mappings.
 
 ## Example Workflow
 

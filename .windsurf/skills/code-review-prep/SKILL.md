@@ -332,6 +332,17 @@ Use this checklist before submitting:
    - Post in Slack: "PR ready for review"
 ```
 
+## [PROJECT-SPECIFIC MCP MAPPING]
+
+For projects with MCP configured, capabilities map to:
+
+* **code_repository**: Use to verify GitHub/GitLab PR status and CI checks
+* **static_analysis**: Use to check SonarQube/CodeClimate quality gate
+* **coverage_reporting**: Use to verify Codecov/Coveralls coverage
+* **communication**: Use to notify team when PR is ready (optional)
+
+Consult AGENTS.md for your project's specific MCP configuration and source-of-truth mappings.
+
 ## Notes
 
 * This is a generic skill. Always adapt to project-specific requirements.

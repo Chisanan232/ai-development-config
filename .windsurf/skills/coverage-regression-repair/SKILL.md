@@ -37,10 +37,18 @@ Before fixing coverage:
 
 ### Phase 1: Assess the Coverage Gap
 
-1. **Run coverage report**
-   * Consult AGENTS.md for coverage command
+1. **Get coverage data**
+
+   **If coverage_reporting MCP capability is available:**
+   * Use MCP to read current coverage percentage
+   * Use MCP to read file-level coverage
+   * Use MCP to read uncovered line numbers
+   * Use MCP to read coverage diff (if available)
+   
+   **If MCP is not configured:**
+   * Run coverage report locally (consult AGENTS.md for command)
    * Generate HTML or detailed report
-   * Identify uncovered lines
+   * Manually identify uncovered lines
 
 2. **Analyze the gap**
    * Which files have low coverage?
@@ -356,6 +364,15 @@ Before considering coverage repair complete:
 * **For test design**: Use `test-design` skill
 * **For feature testing**: Use `feature-implementation` skill
 * **For CI failures**: Use `ci-failure-triage` skill
+
+## [PROJECT-SPECIFIC MCP MAPPING]
+
+For projects with MCP configured, capabilities map to:
+
+* **coverage_reporting**: Use to read Codecov/Coveralls/SonarQube coverage data
+* **code_repository**: Use to read PR coverage diff (optional)
+
+Consult AGENTS.md for your project's specific MCP configuration and source-of-truth mappings.
 
 ## Example Workflow
 
