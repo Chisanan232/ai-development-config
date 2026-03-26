@@ -86,7 +86,25 @@ uv run mypy .
 
 If commands don't work, update AGENTS.md with correct commands.
 
-### 5. Commit Configuration
+### 5. (Optional) Configure MCP Servers
+
+For enhanced capabilities, set up MCP servers:
+
+```bash
+# See docs/mcp-setup-guide.md for detailed instructions
+# Quick start: Configure GitHub and Slack MCP servers
+# Location: ~/.codeium/windsurf/mcp_config.json
+```
+
+**Benefits of MCP:**
+* AI can read PR status and CI results
+* AI can send team notifications
+* AI can access code quality reports
+* AI can read coverage data
+
+**Skip for now?** You can add MCP later. The configuration works without it.
+
+### 6. Commit Configuration
 
 ```bash
 git add AGENTS.md .windsurf hooks
@@ -142,9 +160,12 @@ git commit -m "chore: add Windsurf Cascade configuration"
 * **`architecture-rationale.md`**: Why this architecture
 * **`customization-guide.md`**: How to customize
 * **`language-overlays.md`**: Language-specific guidance
+* **`mcp-integration.md`**: MCP architecture and design
+* **`mcp-setup-guide.md`**: MCP setup walkthrough
 
 ### `examples/` Directory
 
+* **`mcp_config.json`**: Example MCP configuration
 * **`backend/AGENTS.md`**: Backend-specific context
 * **`frontend/AGENTS.md`**: Frontend-specific context
 * **`infra/AGENTS.md`**: Infrastructure-specific context
@@ -153,13 +174,14 @@ git commit -m "chore: add Windsurf Cascade configuration"
 
 ## Understanding the Architecture
 
-### Five Layers
+### Six Layers
 
 1. **AGENTS.md**: Project truth (languages, tools, commands, conventions)
 2. **Rules**: Short behavioral constraints (coding standards, testing policy)
 3. **Skills**: Multi-step procedures (feature implementation, CI triage)
-4. **Workflows**: Manual checklists (PR readiness, release readiness)
-5. **Hooks**: Automated enforcement (quality gates, dangerous command blocking)
+4. **MCP Servers**: External capability providers (GitHub, Slack, SonarQube, Codecov)
+5. **Workflows**: Manual checklists (PR readiness, release readiness)
+6. **Hooks**: Automated enforcement (quality gates, dangerous command blocking)
 
 ### Why This Structure?
 
