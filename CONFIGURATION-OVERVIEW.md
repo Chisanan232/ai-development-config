@@ -8,7 +8,7 @@ A **production-minded, generic-first Windsurf Cascade configuration starter kit*
 
 ## Architecture
 
-### Five-Layer Model
+### Six-Layer Model
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -30,6 +30,12 @@ A **production-minded, generic-first Windsurf Cascade configuration starter kit*
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
+│                       MCP Servers                           │
+│         External Capability Providers & Data Access         │
+│  (GitHub, Slack, SonarQube, Codecov, JIRA, observability)  │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
 │                        Workflows                            │
 │              Manually Triggered Runbooks                    │
 │    (PR readiness, release readiness, dep upgrades)          │
@@ -44,13 +50,14 @@ A **production-minded, generic-first Windsurf Cascade configuration starter kit*
 
 ### Layer Responsibilities
 
-| Layer         | Purpose                | Examples                          | When to Use                 |
-|---------------|------------------------|-----------------------------------|-----------------------------|
-| **AGENTS.md** | Project truth          | Languages, tools, commands        | Facts about the project     |
-| **Rules**     | Behavioral constraints | Coding standards, testing policy  | Always-on constraints       |
-| **Skills**    | Procedural strategies  | Feature implementation, CI triage | Multi-step procedures       |
-| **Workflows** | Manual runbooks        | PR readiness, release checklist   | Manual milestone checklists |
-| **Hooks**     | Automated enforcement  | Quality gate, command blocking    | Automated validation        |
+| Layer           | Purpose                    | Examples                          | When to Use                 |
+|-----------------|----------------------------|-----------------------------------|-----------------------------|
+| **AGENTS.md**   | Project truth              | Languages, tools, commands        | Facts about the project     |
+| **Rules**       | Behavioral constraints     | Coding standards, testing policy  | Always-on constraints       |
+| **Skills**      | Procedural strategies      | Feature implementation, CI triage | Multi-step procedures       |
+| **MCP Servers** | External capability access | GitHub, Slack, SonarQube, Codecov | Access to external systems  |
+| **Workflows**   | Manual runbooks            | PR readiness, release checklist   | Manual milestone checklists |
+| **Hooks**       | Automated enforcement      | Quality gate, command blocking    | Automated validation        |
 
 ## Complete File Structure
 
@@ -103,9 +110,12 @@ your-repository/
 ├── docs/                                        # Documentation
 │   ├── architecture-rationale.md
 │   ├── customization-guide.md
-│   └── language-overlays.md
+│   ├── language-overlays.md
+│   ├── mcp-integration.md
+│   └── mcp-setup-guide.md
 │
 └── examples/                                    # Example configurations
+    ├── mcp_config.json                          # Example MCP configuration
     ├── backend/
     │   └── AGENTS.md
     ├── frontend/
@@ -170,6 +180,8 @@ your-repository/
 | architecture-rationale.md | Design decisions           | Advanced users          |
 | customization-guide.md    | How to customize           | Maintainers             |
 | language-overlays.md      | Language-specific guidance | Multi-language projects |
+| mcp-integration.md        | MCP architecture & design  | All users               |
+| mcp-setup-guide.md        | MCP setup walkthrough      | New users               |
 
 ## Customization Priority
 
@@ -180,8 +192,9 @@ your-repository/
 3. **Set coverage threshold** for your project
 4. **Define commit style** for your team
 5. **Locate PR template** in your repository
+6. **Configure MCP servers** for essential systems (GitHub, Slack) - see `docs/mcp-setup-guide.md`
 
-**Time: 30 minutes**
+**Time: 1-2 hours (including MCP setup)**
 
 ### Priority 2: Review (Do Soon)
 
