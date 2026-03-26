@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "post_write_code": [
+      {
+        "command": "python3 hooks/quality_gate.py",
+        "show_output": true,
+        "description": "Run lightweight quality checks on modified files"
+      }
+    ],
+    "pre_run_command": [
+      {
+        "command": "python3 hooks/block_dangerous_commands.py",
+        "show_output": true,
+        "description": "Block dangerous commands from running"
+      }
+    ],
+    "post_run_command": [
+      {
+        "command": "python3 hooks/audit_log.py",
+        "show_output": false,
+        "description": "Log command execution for audit trail"
+      }
+    ]
+  },
+  "config": {
+    "enabled": true,
+    "timeout_seconds": 30,
+    "fail_on_error": false
+  }
+}
