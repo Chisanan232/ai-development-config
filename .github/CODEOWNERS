@@ -1,0 +1,29 @@
+# CODEOWNERS file for the Simple AI worker project
+# Format: file-pattern @owner
+# Order is important; the last matching pattern takes precedence.
+
+#######################################
+# Repository Default Owner
+#######################################
+*                                     @Chisanan232
+
+# Software license annotation
+/LICENSE                              @Chisanan232
+
+#######################################
+# Scripts
+#######################################
+*.py                                  @Chisanan232
+
+#######################################
+# Documentation
+#######################################
+/docs/                                @Chisanan232
+*.md                                  @Chisanan232
+*.mdx                                 @Chisanan232
+*.ts                                  @Chisanan232
+
+#######################################
+# GitHub Configuration
+#######################################
+/.github/                             @Chisanan232
