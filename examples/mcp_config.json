@@ -1,210 +1,195 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Example MCP configuration for Windsurf Cascade - Python-first engineering workflow",
+  "description": "Example MCP configuration for Windsurf Cascade - Docker-based MCP servers with HTTP transport",
   "mcpServers": {
     "github": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-github"
-      ],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
-      },
-      "disabled": false,
+      "serverUrl": "http://localhost:8102/mcp",
       "metadata": {
         "capability": "code_repository",
         "priority": "essential",
-        "description": "Source of truth for code, PRs, and CI state"
+        "description": "Source of truth for code, PRs, and CI state",
+        "docker_service": "mcp-github",
+        "note": "Requires docker compose up -d mcp-github"
       }
     },
     "slack": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-slack"
-      ],
-      "env": {
-        "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
-        "SLACK_TEAM_ID": "${SLACK_TEAM_ID}"
-      },
-      "disabled": false,
+      "serverUrl": "http://localhost:8103/mcp",
       "metadata": {
         "capability": "communication",
         "priority": "recommended",
-        "description": "Team notifications and status updates"
+        "description": "Team notifications and status updates",
+        "docker_service": "mcp-slack",
+        "note": "Requires docker compose up -d mcp-slack"
       }
     },
     "sonarqube": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-sonarqube"
-      ],
-      "env": {
-        "SONARQUBE_URL": "${SONARQUBE_URL}",
-        "SONARQUBE_TOKEN": "${SONARQUBE_TOKEN}",
-        "SONARQUBE_PROJECT_KEY": "${SONARQUBE_PROJECT_KEY}"
+      "serverUrl": "http://localhost:8104/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:SONARQUBE_TOKEN}"
       },
-      "disabled": true,
       "metadata": {
         "capability": "static_analysis",
         "priority": "recommended",
         "description": "Code quality and security analysis",
-        "note": "[PROJECT-SPECIFIC] Enable if using SonarQube. Verify server implementation exists."
+        "docker_service": "mcp-sonarqube",
+        "implementation": "Official SonarSource: mcp/sonarqube",
+        "note": "Requires docker compose up -d mcp-sonarqube. Token must be in Authorization header for HTTP mode."
       }
     },
     "codecov": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-codecov"
-      ],
-      "env": {
-        "CODECOV_TOKEN": "${CODECOV_TOKEN}",
-        "CODECOV_REPO": "${CODECOV_REPO}"
-      },
+      "serverUrl": "http://localhost:8105/mcp",
       "disabled": true,
       "metadata": {
         "capability": "coverage_reporting",
         "priority": "recommended",
         "description": "Test coverage tracking and reporting",
-        "note": "[PROJECT-SPECIFIC] Enable if using Codecov. Verify server implementation exists."
+        "docker_service": "mcp-codecov",
+        "note": "[PLACEHOLDER] Verify MCP server implementation exists. Not yet configured in docker-compose.yml."
       }
     },
     "jira": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-jira"
-      ],
-      "env": {
-        "JIRA_URL": "${JIRA_URL}",
-        "JIRA_EMAIL": "${JIRA_EMAIL}",
-        "JIRA_API_TOKEN": "${JIRA_API_TOKEN}"
-      },
+      "serverUrl": "http://localhost:8100/mcp",
       "disabled": true,
       "metadata": {
         "capability": "issue_tracking",
         "priority": "optional",
         "description": "Task and issue tracking",
-        "note": "[PROJECT-SPECIFIC] Enable if using JIRA. Verify server implementation exists."
+        "docker_service": "mcp-jira",
+        "note": "Requires docker compose --profile optional up -d mcp-jira"
       }
     },
     "clickup": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-clickup"
-      ],
-      "env": {
-        "CLICKUP_API_TOKEN": "${CLICKUP_API_TOKEN}",
-        "CLICKUP_TEAM_ID": "${CLICKUP_TEAM_ID}"
-      },
+      "serverUrl": "http://localhost:8101/mcp",
       "disabled": true,
       "metadata": {
         "capability": "issue_tracking",
         "priority": "optional",
         "description": "Task and issue tracking (alternative to JIRA)",
-        "note": "[PROJECT-SPECIFIC] Enable if using ClickUp. Verify server implementation exists."
+        "docker_service": "mcp-clickup",
+        "note": "Requires docker compose --profile optional up -d mcp-clickup"
       }
     },
     "datadog": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-datadog"
-      ],
-      "env": {
-        "DATADOG_API_KEY": "${DATADOG_API_KEY}",
-        "DATADOG_APP_KEY": "${DATADOG_APP_KEY}",
-        "DATADOG_SITE": "${DATADOG_SITE}"
-      },
+      "serverUrl": "http://localhost:8106/mcp",
       "disabled": true,
       "metadata": {
         "capability": "observability",
         "priority": "optional",
         "description": "Production monitoring and metrics",
-        "note": "[PROJECT-SPECIFIC] Enable if using Datadog. Verify server implementation exists."
+        "note": "[NOT CONFIGURED] No Docker service configured. Add to docker-compose.yml if needed."
       }
     },
     "sentry": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-sentry"
-      ],
-      "env": {
-        "SENTRY_AUTH_TOKEN": "${SENTRY_AUTH_TOKEN}",
-        "SENTRY_ORG": "${SENTRY_ORG}",
-        "SENTRY_PROJECT": "${SENTRY_PROJECT}"
-      },
+      "serverUrl": "http://localhost:8107/mcp",
       "disabled": true,
       "metadata": {
         "capability": "observability",
         "priority": "optional",
         "description": "Error tracking and monitoring",
-        "note": "[PROJECT-SPECIFIC] Enable if using Sentry. Verify server implementation exists."
+        "note": "[NOT CONFIGURED] No Docker service configured. Add to docker-compose.yml if needed."
       }
     },
     "confluence": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-confluence"
-      ],
-      "env": {
-        "CONFLUENCE_URL": "${CONFLUENCE_URL}",
-        "CONFLUENCE_EMAIL": "${CONFLUENCE_EMAIL}",
-        "CONFLUENCE_API_TOKEN": "${CONFLUENCE_API_TOKEN}"
-      },
+      "serverUrl": "http://localhost:8108/mcp",
       "disabled": true,
       "metadata": {
         "capability": "knowledge_search",
         "priority": "optional",
         "description": "Documentation and knowledge base search",
-        "note": "[PROJECT-SPECIFIC] Enable if using Confluence. Verify server implementation exists."
+        "note": "[NOT CONFIGURED] No Docker service configured. Add to docker-compose.yml if needed."
       }
     }
   },
   "notes": {
+    "remote_http_mcp_format": {
+      "serverUrl": "Required. The URL endpoint for the remote MCP server (must end with /mcp)",
+      "headers": "Optional. Custom headers to send with requests (e.g., Authorization)",
+      "disabled": "Optional. Set to true to disable the server",
+      "note": "Do NOT use 'url' or 'transport' properties - use 'serverUrl' only per Windsurf documentation"
+    },
     "important": [
-      "[VERIFY SERVER IMPLEMENTATION] The MCP server package names above are examples. Verify actual implementations exist before use.",
+      "[DOCKER-BASED] This configuration uses serverUrl to connect to Docker-based MCP servers.",
+      "[PREREQUISITES] Run 'docker compose up -d' to start MCP servers before using Windsurf.",
+      "[CREDENTIALS] Set credentials in .env file (see .env.example), not in this config.",
+      "[SONARQUBE AUTH] SonarQube requires Authorization header with token. Use ${env:SONARQUBE_TOKEN} for interpolation.",
+      "[CONFIG INTERPOLATION] Use ${env:VAR_NAME} to reference environment variables in headers.",
       "[PROJECT-SPECIFIC] Enable only servers for systems you actually use.",
-      "[NEVER COMMIT SECRETS] Use environment variables (${VAR_NAME}) for all credentials.",
       "[TOOL BUDGET] Windsurf has a limit on total enabled tools. Start with 2-3 essential servers.",
-      "[LOCATION] Copy this to ~/.codeium/windsurf/mcp_config.json (global) or .windsurf/mcp_config.json (project, not recommended for secrets)."
+      "[LOCATION] Copy this to ~/.codeium/windsurf/mcp_config.json (global) or .windsurf/mcp_config.json (project)."
     ],
     "setup_steps": [
-      "1. Copy this file to ~/.codeium/windsurf/mcp_config.json",
-      "2. Set environment variables in ~/.zshrc or ~/.bashrc",
-      "3. Enable only essential servers initially (github, slack)",
-      "4. Test each server before enabling the next",
-      "5. Verify Windsurf recognizes all tools",
-      "6. Update AGENTS.md with MCP source-of-truth mappings"
+      "1. Copy .env.example to .env and fill in credentials",
+      "2. Set environment variable: export SONARQUBE_TOKEN=your_token_here (in ~/.zshrc or ~/.bashrc)",
+      "3. Start MCP servers: docker compose up -d mcp-github mcp-slack mcp-sonarqube",
+      "4. Verify servers are running: docker compose ps",
+      "5. Copy this file to ~/.codeium/windsurf/mcp_config.json",
+      "6. Remove 'disabled: true' from servers you want to use",
+      "7. Restart Windsurf to load the configuration",
+      "8. Test each server before enabling the next",
+      "9. Update AGENTS.md with MCP source-of-truth mappings"
     ],
-    "environment_variables": {
-      "github": [
-        "GITHUB_TOKEN: GitHub Personal Access Token with repo, read:org, workflow scopes"
+    "docker_services": {
+      "essential": [
+        "mcp-github (port 8102) - Start with: docker compose up -d mcp-github",
+        "mcp-slack (port 8103) - Start with: docker compose up -d mcp-slack"
       ],
-      "slack": [
-        "SLACK_BOT_TOKEN: Slack Bot User OAuth Token (xoxb-...)",
-        "SLACK_TEAM_ID: Slack Team/Workspace ID (T...)"
+      "recommended": [
+        "mcp-sonarqube (port 8104) - Start with: docker compose up -d mcp-sonarqube"
       ],
-      "sonarqube": [
-        "SONARQUBE_URL: SonarQube server URL",
-        "SONARQUBE_TOKEN: SonarQube user token",
-        "SONARQUBE_PROJECT_KEY: Project key in SonarQube"
+      "optional": [
+        "mcp-jira (port 8100) - Start with: docker compose --profile optional up -d mcp-jira",
+        "mcp-clickup (port 8101) - Start with: docker compose --profile optional up -d mcp-clickup"
       ],
-      "codecov": [
-        "CODECOV_TOKEN: Codecov API token",
-        "CODECOV_REPO: Repository in owner/repo format"
-      ],
-      "jira": [
-        "JIRA_URL: JIRA instance URL (https://your-domain.atlassian.net)",
-        "JIRA_EMAIL: Your JIRA email",
-        "JIRA_API_TOKEN: JIRA API token"
+      "not_configured": [
+        "mcp-codecov (port 8105) - Placeholder, verify implementation exists",
+        "datadog, sentry, confluence - Not configured in docker-compose.yml"
       ]
+    },
+    "port_mapping": {
+      "8100": "mcp-jira (optional)",
+      "8101": "mcp-clickup (optional)",
+      "8102": "mcp-github (essential)",
+      "8103": "mcp-slack (recommended)",
+      "8104": "mcp-sonarqube (recommended)",
+      "8105": "mcp-codecov (placeholder)"
+    },
+    "environment_variables": {
+      "docker_containers": {
+        "github": "GITHUB_TOKEN - Set in .env for Docker container",
+        "slack": "SLACK_BOT_TOKEN, SLACK_TEAM_ID - Set in .env for Docker container",
+        "sonarqube": "SONARQUBE_TOKEN, SONARQUBE_ORG/SONARQUBE_URL - Set in .env for Docker container",
+        "jira": "JIRA_URL, JIRA_EMAIL, JIRA_API_TOKEN - Set in .env for Docker container",
+        "clickup": "CLICKUP_API_TOKEN, CLICKUP_TEAM_ID - Set in .env for Docker container"
+      },
+      "windsurf_config": {
+        "sonarqube": "SONARQUBE_TOKEN - Set as shell environment variable for ${env:SONARQUBE_TOKEN} interpolation",
+        "note": "Use ${env:VAR_NAME} syntax in headers to reference shell environment variables"
+      }
+    },
+    "documentation": {
+      "windsurf_official": "https://docs.windsurf.com/windsurf/cascade/mcp#remote-http-mcps",
+      "docker_setup": "See docs/mcp-docker-setup.md for complete Docker setup guide",
+      "mcp_integration": "See docs/mcp-integration.md for MCP architecture and design",
+      "quick_reference": "See DOCKER-MCP-README.md for quick reference"
+    }
+  },
+  "alternative_configurations": {
+    "npx_based": {
+      "note": "For npx-based MCP servers (stdio transport), use command/args/env properties",
+      "example": "{ \"command\": \"npx\", \"args\": [\"-y\", \"@modelcontextprotocol/server-github\"], \"env\": { \"GITHUB_PERSONAL_ACCESS_TOKEN\": \"<token>\" } }"
+    },
+    "docker_stdio": {
+      "note": "For Docker with stdio transport, use command: docker with run -i --rm",
+      "example": "{ \"command\": \"docker\", \"args\": [\"run\", \"-i\", \"--rm\", \"-e\", \"GITHUB_PERSONAL_ACCESS_TOKEN\", \"ghcr.io/github/github-mcp-server\"], \"env\": {...} }"
+    },
+    "remote_http": {
+      "note": "For remote HTTP MCPs (this config), use serverUrl and optional headers",
+      "example": "{ \"serverUrl\": \"http://localhost:8102/mcp\", \"headers\": { \"Authorization\": \"Bearer ${env:TOKEN}\" } }"
+    },
+    "comparison": {
+      "docker_http": "Isolated, persistent, team-friendly, requires Docker Compose setup",
+      "docker_stdio": "Isolated, ephemeral, requires Docker but simpler config",
+      "npx_stdio": "Quick setup, auto-updates, requires Node.js, good for local testing"
     }
   }
 }
