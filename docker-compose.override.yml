@@ -1,0 +1,41 @@
+# =============================================================================
+# docker-compose.override.yml — Local Development Overrides
+# =============================================================================
+#
+# This file is automatically merged with docker-compose.yml when you run:
+#   docker compose up
+#
+# Purpose: Add development-specific settings without modifying the base file
+#
+# =============================================================================
+
+services:
+
+  # Add logging configuration for easier debugging
+  mcp-github:
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mcp-slack:
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mcp-jira:
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mcp-clickup:
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
