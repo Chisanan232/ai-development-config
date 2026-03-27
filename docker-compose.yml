@@ -1,0 +1,258 @@
+# =============================================================================
+# docker-compose.yml — Windsurf Cascade MCP Servers
+# =============================================================================
+#
+# Purpose
+# -------
+# Run MCP (Model Context Protocol) servers for Windsurf Cascade AI tool.
+# These servers provide external capabilities like GitHub PR access, Slack
+# notifications, code quality reports, and more.
+#
+# Services
+# --------
+#   mcp-github    — GitHub MCP server (port 8102)
+#   mcp-slack     — Slack MCP server (port 8103)
+#   mcp-sonarqube — SonarQube MCP server (port 8104) [placeholder]
+#   mcp-codecov   — Codecov MCP server (port 8105) [placeholder]
+#   mcp-jira      — JIRA MCP server (port 8100) [optional]
+#   mcp-clickup   — ClickUp MCP server (port 8101) [optional]
+#
+# Quick Start
+# -----------
+#   1. Copy .env.example to .env and fill in credentials:
+#      cp .env.example .env
+#
+#   2. Start essential MCP servers (GitHub + Slack):
+#      docker compose up -d mcp-github mcp-slack
+#
+#   3. Verify servers are running:
+#      docker compose ps
+#      docker compose logs mcp-github
+#
+#   4. Configure Windsurf to use these servers:
+#      See docs/mcp-docker-setup.md
+#
+#   5. Stop servers:
+#      docker compose down
+#
+# Local Development
+# -----------------
+#   Ports are exposed on localhost for Windsurf to connect.
+#   See docker-compose.override.yml for additional dev settings.
+#
+# Prerequisites
+# -------------
+#   - .env file with MCP credentials (copy from .env.example)
+#   - Docker and Docker Compose installed
+#   - Windsurf Cascade installed
+#
+# =============================================================================
+
+name: windsurf-mcp-servers
+
+# ---------------------------------------------------------------------------
+# Network
+# ---------------------------------------------------------------------------
+networks:
+  windsurf-mcp-network:
+    driver: bridge
+    name: windsurf-mcp-network
+
+# ---------------------------------------------------------------------------
+# Volumes
+# ---------------------------------------------------------------------------
+volumes:
+  sonarqube-mcp-storage:
+    name: sonarqube-mcp-storage
+
+# ---------------------------------------------------------------------------
+# Common MCP Server Settings
+# ---------------------------------------------------------------------------
+# All MCP servers:
+# - Load credentials from .env (never commit secrets)
+# - Connect to windsurf-mcp-network
+# - Restart on failure
+# - Expose ports on localhost for Windsurf to connect
+
+# ---------------------------------------------------------------------------
+# Services
+# ---------------------------------------------------------------------------
+services:
+
+  # --------------------------------------------------------------------------
+  # MCP Server: GitHub
+  # https://github.com/github/github-mcp-server
+  # --------------------------------------------------------------------------
+  mcp-github:
+    image: ghcr.io/github/github-mcp-server:latest
+    container_name: mcp-github
+    command: ["http", "--port", "8102"]
+    networks:
+      - windsurf-mcp-network
+    environment:
+      # GitHub Personal Access Token
+      # Required scopes: repo, read:org, workflow
+      # Generate at: https://github.com/settings/tokens
+      GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_TOKEN}
+    ports:
+      # Expose on localhost for Windsurf to connect
+      - "127.0.0.1:8102:8102"
+    healthcheck:
+      test: ["CMD", "/server/github-mcp-server", "list-scopes"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # MCP Server: Slack
+  # https://github.com/Chisanan232/slack-mcp-server
+  # --------------------------------------------------------------------------
+  mcp-slack:
+    image: ghcr.io/chisanan232/slack-mcp-server:latest
+    container_name: mcp-slack
+    networks:
+      - windsurf-mcp-network
+    environment:
+      # Slack Bot User OAuth Token (xoxb-...)
+      # Required scopes: chat:write, channels:read, im:write
+      # Generate at: https://api.slack.com/apps → OAuth & Permissions
+      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN}
+      # Slack Team/Workspace ID (T...)
+      # Find at: Workspace Settings → Workspace ID
+      SLACK_TEAM_ID: ${SLACK_TEAM_ID}
+      MCP_PORT: "8103"
+      MCP_TRANSPORT: "sse"
+    ports:
+      - "127.0.0.1:8103:8103"
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; c=urllib.request.urlopen('http://localhost:8103/sse', timeout=3); c.close()\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # MCP Server: SonarQube (Code Quality)
+  # https://github.com/SonarSource/sonarqube-mcp-server
+  # Official SonarSource implementation
+  # --------------------------------------------------------------------------
+  mcp-sonarqube:
+    image: mcp/sonarqube:latest
+    container_name: mcp-sonarqube
+    networks:
+      - windsurf-mcp-network
+    environment:
+      # Transport mode: http (for Docker deployment)
+      SONARQUBE_TRANSPORT: http
+      SONARQUBE_HTTP_PORT: "8104"
+      SONARQUBE_HTTP_HOST: "0.0.0.0"
+      
+      # SonarQube Connection (choose Cloud OR Server, not both)
+      # For SonarQube Cloud:
+      SONARQUBE_TOKEN: ${SONARQUBE_TOKEN}
+      SONARQUBE_ORG: ${SONARQUBE_ORG:-}
+      # For SonarQube Server (self-hosted):
+      SONARQUBE_URL: ${SONARQUBE_URL:-}
+      
+      # Optional: Project-specific configuration
+      SONARQUBE_PROJECT_KEY: ${SONARQUBE_PROJECT_KEY:-}
+      
+      # Storage path for MCP server data
+      STORAGE_PATH: /app/mcp-storage
+      
+      # Optional: Debug logging
+      SONARQUBE_DEBUG_ENABLED: ${SONARQUBE_DEBUG_ENABLED:-false}
+      SONARQUBE_LOG_TO_FILE_DISABLED: "true"
+    volumes:
+      # Mount project directory for workspace analysis (reduces context bloat)
+      # Uncomment and adjust path to your project:
+      # - /path/to/your/project:/app/mcp-workspace:ro
+      
+      # Storage volume for MCP server data
+      - sonarqube-mcp-storage:/app/mcp-storage
+    ports:
+      - "127.0.0.1:8104:8104"
+    healthcheck:
+      # HTTP mode health check
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8104/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # MCP Server: Codecov (Coverage Reporting)
+  # [PLACEHOLDER - Verify actual MCP server implementation exists]
+  # --------------------------------------------------------------------------
+  # mcp-codecov:
+  #   image: [VERIFY-IMPLEMENTATION]
+  #   container_name: mcp-codecov
+  #   networks:
+  #     - windsurf-mcp-network
+  #   environment:
+  #     CODECOV_TOKEN: ${CODECOV_TOKEN}
+  #     CODECOV_REPO: ${CODECOV_REPO}
+  #   ports:
+  #     - "127.0.0.1:8105:8105"
+  #   restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # MCP Server: JIRA (Issue Tracking) [OPTIONAL]
+  # https://github.com/sooperset/mcp-atlassian
+  # --------------------------------------------------------------------------
+  mcp-jira:
+    image: ghcr.io/sooperset/mcp-atlassian:latest
+    container_name: mcp-jira
+    command: ["--transport", "sse", "--port", "8100"]
+    networks:
+      - windsurf-mcp-network
+    environment:
+      # JIRA Cloud URL (https://your-domain.atlassian.net)
+      JIRA_URL: ${JIRA_URL}
+      # JIRA account email
+      JIRA_USERNAME: ${JIRA_EMAIL}
+      # JIRA API token from https://id.atlassian.com/manage-profile/security/api-tokens
+      JIRA_API_TOKEN: ${JIRA_API_TOKEN}
+    ports:
+      - "127.0.0.1:8100:8100"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8100/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    profiles:
+      - optional
+
+  # --------------------------------------------------------------------------
+  # MCP Server: ClickUp (Issue Tracking) [OPTIONAL]
+  # https://github.com/Chisanan232/clickup-mcp-server
+  # --------------------------------------------------------------------------
+  mcp-clickup:
+    image: ghcr.io/chisanan232/clickup-mcp-server:latest
+    container_name: mcp-clickup
+    networks:
+      - windsurf-mcp-network
+    environment:
+      # ClickUp API token from https://app.clickup.com/settings/apps
+      CLICKUP_API_TOKEN: ${CLICKUP_API_TOKEN}
+      # Optional: ClickUp Workspace/Team ID
+      CLICKUP_TEAM_ID: ${CLICKUP_TEAM_ID:-}
+      SERVER_PORT: "8101"
+      MCP_TRANSPORT: "sse"
+    ports:
+      - "127.0.0.1:8101:8101"
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8101/health', timeout=3)\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    profiles:
+      - optional
