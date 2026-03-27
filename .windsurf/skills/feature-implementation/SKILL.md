@@ -1,5 +1,5 @@
 ---
-name: Feature Implementation
+name: feature-implementation
 description: Safe, structured approach to implementing new features
 when_to_use: When implementing new functionality or significant enhancements
 tags: [implementation, features, development]

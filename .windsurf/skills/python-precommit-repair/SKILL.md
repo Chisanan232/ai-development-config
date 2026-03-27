@@ -1,5 +1,5 @@
 ---
-name: Python Pre-commit Repair
+name: python-precommit-repair
 description: Systematic approach to resolving pre-commit hook failures in Python projects
 when_to_use: When pre-commit hooks fail locally or in CI
 tags: [python, pre-commit, git-hooks, quality]

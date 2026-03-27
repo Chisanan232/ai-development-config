@@ -1,5 +1,5 @@
 ---
-name: CI Failure Triage
+name: ci-failure-triage
 description: Systematic approach to diagnosing and fixing CI failures
 when_to_use: When CI checks fail on a pull request or branch
 tags: [ci-cd, debugging, troubleshooting]

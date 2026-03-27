@@ -1,5 +1,5 @@
 ---
-name: Python MyPy Debugging
+name: python-mypy-debugging
 description: Systematic approach to resolving MyPy type checking errors in Python
 when_to_use: When MyPy type checking fails in Python projects
 tags: [python, mypy, type-checking, debugging]

@@ -1,5 +1,5 @@
 ---
-name: Python Ruff Fixing
+name: python-ruff-fixing
 description: Systematic approach to resolving Ruff linting and formatting issues in Python
 when_to_use: When Ruff linting or formatting checks fail in Python projects
 tags: [python, ruff, linting, formatting]

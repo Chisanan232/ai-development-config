@@ -1,5 +1,5 @@
 ---
-name: Code Review Preparation
+name: code-review-prep
 description: Prepare high-quality pull requests ready for review
 when_to_use: When preparing to submit a pull request
 tags: [pull-request, code-review, collaboration]
