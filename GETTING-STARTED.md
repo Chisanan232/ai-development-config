@@ -346,14 +346,14 @@ Set up global configuration on your machine:
 ```bash
 # Create global directories
 mkdir -p ~/.codeium/windsurf/memories
-mkdir -p ~/.codeium/windsurf/skills
+mkdir -p ~/.codeium/skills
 
 # Add global rules
 # Edit: ~/.codeium/windsurf/memories/global_rules.md
 
 # Copy generic skills to global
-cp -r .windsurf/skills/feature-implementation ~/.codeium/windsurf/skills/
-cp -r .windsurf/skills/test-design ~/.codeium/windsurf/skills/
+cp -r .windsurf/skills/feature-implementation ~/.codeium/skills/
+cp -r .windsurf/skills/test-design ~/.codeium/skills/
 ```
 
 ### Share with Team

@@ -25,7 +25,7 @@ Windsurf supports the following relevant configuration layers:
 * **Workspace Rules**: `.windsurf/rules/*.md`
 * **Global Rules**: `~/.codeium/windsurf/memories/global_rules.md`
 * **Workspace Skills**: `.windsurf/skills/`
-* **Global Skills**: `~/.codeium/windsurf/skills/`
+* **Global Skills**: `~/.codeium/skills/`
 * **Workspace Hooks**: `.windsurf/hooks.json`
 * **Workflows**: `.windsurf/workflows/`
 
@@ -72,7 +72,7 @@ On macOS or Linux:
 
 ```bash
 mkdir -p ~/.codeium/windsurf/memories
-mkdir -p ~/.codeium/windsurf/skills
+mkdir -p ~/.codeium/skills
 ```
 
 On Windows PowerShell:
@@ -101,13 +101,13 @@ Do **not** put highly project-specific instructions here.
 
 Create skill folders under:
 
-* macOS / Linux: `~/.codeium/windsurf/skills/`
-* Windows: `%USERPROFILE%\.codeium\windsurf\skills\`
+* macOS / Linux: `~/.codeium/skills/`
+* Windows: `%USERPROFILE%\.codeium\skills\`
 
 Example:
 
 ```text
-~/.codeium/windsurf/skills/
+~/.codeium/skills/
 ├── ci-failure-triage/
 │   └── SKILL.md
 ├── python-mypy-debugging/
