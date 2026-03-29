@@ -2,6 +2,11 @@
   "hooks": {
     "post_write_code": [
       {
+        "command": "python3 hooks/policy_engine.py",
+        "show_output": true,
+        "description": "Enforce scope-aware project policies on code changes"
+      },
+      {
         "command": "python3 hooks/quality_gate.py",
         "show_output": true,
         "description": "Run lightweight quality checks on modified files"
