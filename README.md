@@ -23,11 +23,12 @@ Windsurf supports the following relevant configuration layers:
 * **Root `AGENTS.md`**: always-on context for the whole repository
 * **Directory-scoped `AGENTS.md`**: automatically applies to matching directories
 * **Workspace Rules**: `.windsurf/rules/*.md`
-* **Global Rules**: `~/.codeium/windsurf/memories/global_rules.md`
+* **Global Rules**: `~/.codeium/memories/global_rules.md`
 * **Workspace Skills**: `.windsurf/skills/`
 * **Global Skills**: `~/.codeium/skills/`
 * **Workspace Hooks**: `.windsurf/hooks.json`
-* **Workflows**: `.windsurf/workflows/`
+* **Workspace Workflows**: `.windsurf/workflows/`
+* **Global Workflows**: `~/.codeium/global_workflows/`
 
 ---
 
@@ -71,31 +72,41 @@ Good candidates:
 On macOS or Linux:
 
 ```bash
-mkdir -p ~/.codeium/windsurf/memories
+mkdir -p ~/.codeium/memories
 mkdir -p ~/.codeium/skills
 ```
 
 On Windows PowerShell:
 
 ```powershell
-New-Item -ItemType Directory -Force "$HOME\.codeium\windsurf\memories"
-New-Item -ItemType Directory -Force "$HOME\.codeium\windsurf\skills"
+New-Item -ItemType Directory -Force "$HOME\.codeium\memories"
+New-Item -ItemType Directory -Force "$HOME\.codeium\skills"
 ```
 
-### 2. Add your global rules file
+### 2. Add your global rules
 
-Create:
+**Step 1**: Create the rules directory and copy workspace rules (optional):
 
-* macOS / Linux: `~/.codeium/windsurf/memories/global_rules.md`
-* Windows: `%USERPROFILE%\.codeium\windsurf\memories\global_rules.md`
+```bash
+# macOS / Linux
+mkdir -p ~/.codeium/memories/rules
+cp -r .windsurf/rules/* ~/.codeium/memories/rules/
 
-Use this file for:
+# Windows PowerShell
+New-Item -ItemType Directory -Force "$HOME\.codeium\memories\rules"
+Copy-Item -Path ".windsurf\rules\*" -Destination "$HOME\.codeium\memories\rules\" -Recurse
+```
 
-* stable personal preferences
-* global engineering habits
-* lightweight “always-on” instructions across projects
+**Step 2**: Create the global rules file:
 
-Do **not** put highly project-specific instructions here.
+* macOS / Linux: `~/.codeium/memories/global_rules.md`
+* Windows: `%USERPROFILE%\.codeium\memories\global_rules.md`
+
+This file should reference the detailed policies in `~/.codeium/memories/rules/` and include your personal preferences.
+
+**See**: 
+- `examples/global_rules.md` for a template that references detailed policies
+- `docs/rules-guide.md` for detailed rules documentation including activation modes
 
 ### 3. Add your global skills
 
@@ -123,6 +134,40 @@ Use global skills for:
 * generic review and triage skills
 
 Do **not** put repository-specific commands into global skills unless clearly marked as examples.
+
+### 4. Add your global workflows (optional)
+
+Create workflow files under:
+
+* macOS / Linux: `~/.codeium/global_workflows/`
+* Windows: `%USERPROFILE%\.codeium\global_workflows\`
+
+Example:
+
+```text
+~/.codeium/global_workflows/
+├── dependency-upgrade-review.md
+├── pr-readiness.md
+└── release-readiness.md
+```
+
+Use global workflows for:
+
+* cross-project manual runbooks
+* common checklists you use across repositories
+* personal workflow templates
+
+You can copy workspace workflows to global location:
+
+```bash
+# macOS / Linux
+mkdir -p ~/.codeium/global_workflows
+cp .windsurf/workflows/*.md ~/.codeium/global_workflows/
+
+# Windows PowerShell
+New-Item -ItemType Directory -Force "$HOME\.codeium\global_workflows"
+Copy-Item -Path ".windsurf\workflows\*.md" -Destination "$HOME\.codeium\global_workflows\" -Recurse
+```
 
 ---
 

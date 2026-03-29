@@ -345,15 +345,24 @@ Set up global configuration on your machine:
 
 ```bash
 # Create global directories
-mkdir -p ~/.codeium/windsurf/memories
+mkdir -p ~/.codeium/memories
+mkdir -p ~/.codeium/memories/rules
 mkdir -p ~/.codeium/skills
 
-# Add global rules
-# Edit: ~/.codeium/windsurf/memories/global_rules.md
+# Copy workspace rules to global location (optional)
+cp -r .windsurf/rules/* ~/.codeium/memories/rules/
+
+# Create global rules file that references detailed policies
+# Edit: ~/.codeium/memories/global_rules.md
+# See examples/global_rules.md for a template
 
 # Copy generic skills to global
 cp -r .windsurf/skills/feature-implementation ~/.codeium/skills/
 cp -r .windsurf/skills/test-design ~/.codeium/skills/
+
+# Copy workflows to global (optional)
+mkdir -p ~/.codeium/global_workflows
+cp .windsurf/workflows/*.md ~/.codeium/global_workflows/
 ```
 
 ### Share with Team
