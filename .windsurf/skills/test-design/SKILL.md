@@ -1,6 +1,6 @@
 ---
 name: test-design
-description: Systematic approach to designing comprehensive tests
+description: Designs comprehensive test suites by identifying test cases, creating test plans, writing unit and integration tests, and ensuring edge case coverage. Use when writing new tests, improving test coverage, designing test strategies, or when asked to create test cases for features or bug fixes.
 metadata:
   when_to_use: When designing tests for new features or existing code
   tags: testing, test-design, quality

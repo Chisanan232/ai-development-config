@@ -1,6 +1,6 @@
 ---
 name: python-ruff-fixing
-description: Systematic approach to resolving Ruff linting and formatting issues in Python
+description: Resolves Ruff linting and formatting issues in Python by fixing code style violations, unused imports, formatting errors, and applying auto-fixes. Use when ruff check fails, linting errors occur, or when fixing Python code style, import organization, or formatting issues.
 metadata:
   when_to_use: When Ruff linting or formatting checks fail in Python projects
   tags: python, ruff, linting, formatting

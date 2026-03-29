@@ -1,6 +1,6 @@
 ---
 name: feature-implementation
-description: Safe, structured approach to implementing new features
+description: Implements new features safely using test-driven development, incremental changes, and quality checks. Use when building new functionality, adding capabilities, implementing user stories, or when asked to develop new features while maintaining code quality.
 metadata:
   when_to_use: When implementing new functionality or significant enhancements
   tags: implementation, features, development

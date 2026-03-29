@@ -1,6 +1,6 @@
 ---
 name: python-precommit-repair
-description: Systematic approach to resolving pre-commit hook failures in Python projects
+description: Resolves pre-commit hook failures in Python projects by fixing formatting, linting, type checking, and other hook errors. Use when pre-commit hooks fail, git commit is blocked, or when troubleshooting black, ruff, mypy, or other pre-commit checks.
 metadata:
   when_to_use: When pre-commit hooks fail locally or in CI
   tags: python, pre-commit, git-hooks, quality

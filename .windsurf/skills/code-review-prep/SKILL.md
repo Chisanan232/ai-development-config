@@ -1,6 +1,6 @@
 ---
 name: code-review-prep
-description: Prepare high-quality pull requests ready for review
+description: Prepares pull requests for code review by checking code quality, running tests, verifying documentation, and creating clear PR descriptions. Use when submitting PRs, preparing code for review, or when asked to check if changes are ready for team review.
 metadata:
   when_to_use: When preparing to submit a pull request
   tags: pull-request, code-review, collaboration

@@ -1,6 +1,6 @@
 ---
 name: python-mypy-debugging
-description: Systematic approach to resolving MyPy type checking errors in Python
+description: Resolves MyPy type checking errors in Python by fixing type hints, adding annotations, and resolving type incompatibilities. Use when mypy fails, type checking errors occur, or when working with Python type hints, annotations, generics, or Protocol types.
 metadata:
   when_to_use: When MyPy type checking fails in Python projects
   tags: python, mypy, type-checking, debugging

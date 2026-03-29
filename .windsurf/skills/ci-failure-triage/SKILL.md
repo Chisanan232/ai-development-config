@@ -1,6 +1,6 @@
 ---
 name: ci-failure-triage
-description: Systematic approach to diagnosing and fixing CI failures
+description: Diagnoses and fixes CI pipeline failures by analyzing logs, identifying root causes, and applying targeted fixes. Use when CI checks fail, builds break, tests fail in CI, or when troubleshooting GitHub Actions, GitLab CI, Jenkins, or other CI/CD systems.
 metadata:
   when_to_use: When CI checks fail on a pull request or branch
   tags: ci-cd, debugging, troubleshooting
