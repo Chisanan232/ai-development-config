@@ -1,8 +1,9 @@
 ---
 name: test-design
 description: Systematic approach to designing comprehensive tests
-when_to_use: When designing tests for new features or existing code
-tags: [testing, test-design, quality]
+metadata:
+  when_to_use: When designing tests for new features or existing code
+  tags: testing, test-design, quality
 ---
 
 # Test Design Skill

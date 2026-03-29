@@ -1,8 +1,9 @@
 ---
 name: coverage-regression-repair
 description: Fix test coverage regressions while maintaining code quality
-when_to_use: When test coverage drops below threshold or CI coverage checks fail
-tags: [testing, coverage, quality]
+metadata:
+  when_to_use: When test coverage drops below threshold or CI coverage checks fail
+  tags: testing, coverage, quality
 ---
 
 # Coverage Regression Repair Skill
