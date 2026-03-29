@@ -381,3 +381,8 @@ When adapting this template for your repository, ensure you:
 - [ ] Configure MCP servers for external systems (see `docs/mcp-setup-guide.md`)
 - [ ] Document MCP-backed source-of-truth systems
 - [ ] Test MCP integration with essential servers (GitHub, Slack)
+
+---
+
+[//]: # (Please replace here by using file *AGENTS.python.md* content)
+{{ AGENTS.python.md }}
