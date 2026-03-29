@@ -49,6 +49,24 @@ Good candidates:
 * language-specific global skills you want available everywhere
 * global engineering heuristics
 
+**⚠️ IMPORTANT: IDE-Specific Global Paths**
+
+The global configuration path depends on which IDE you're using:
+
+* **Windsurf Editor**: `~/.codeium/windsurf/`
+  - Rules: `~/.codeium/windsurf/memories/global_rules.md`
+  - Skills: `~/.codeium/windsurf/skills/`
+  - Workflows: `~/.codeium/windsurf/global_workflows/`
+  - Hooks: `~/.codeium/windsurf/hooks.json` and `~/.codeium/windsurf/hooks/`
+
+* **JetBrains IDEs** (IntelliJ, PyCharm, WebStorm, etc.): `~/.codeium/`
+  - Rules: `~/.codeium/memories/global_rules.md`
+  - Skills: `~/.codeium/skills/`
+  - Workflows: `~/.codeium/global_workflows/`
+  - Hooks: `~/.codeium/hooks.json` and `~/.codeium/hooks/`
+
+**Use the correct path for your IDE throughout this guide.**
+
 ### Layer 2 — Project configuration inside each repository
 
 Put **repository-specific truth and process** here.
@@ -89,17 +107,30 @@ New-Item -ItemType Directory -Force "$HOME\.codeium\skills"
 **Step 1**: Create the rules directory and copy workspace rules (optional):
 
 ```bash
-# macOS / Linux
+# For JetBrains IDEs (macOS / Linux)
 mkdir -p ~/.codeium/memories/rules
 cp -r .windsurf/rules/* ~/.codeium/memories/rules/
 
-# Windows PowerShell
+# For Windsurf Editor (macOS / Linux)
+mkdir -p ~/.codeium/windsurf/memories/rules
+cp -r .windsurf/rules/* ~/.codeium/windsurf/memories/rules/
+
+# For JetBrains IDEs (Windows PowerShell)
 New-Item -ItemType Directory -Force "$HOME\.codeium\memories\rules"
 Copy-Item -Path ".windsurf\rules\*" -Destination "$HOME\.codeium\memories\rules\" -Recurse
+
+# For Windsurf Editor (Windows PowerShell)
+New-Item -ItemType Directory -Force "$HOME\.codeium\windsurf\memories\rules"
+Copy-Item -Path ".windsurf\rules\*" -Destination "$HOME\.codeium\windsurf\memories\rules\" -Recurse
 ```
 
 **Step 2**: Create the global rules file:
 
+**For Windsurf Editor:**
+* macOS / Linux: `~/.codeium/windsurf/memories/global_rules.md`
+* Windows: `%USERPROFILE%\.codeium\windsurf\memories\global_rules.md`
+
+**For JetBrains IDEs:**
 * macOS / Linux: `~/.codeium/memories/global_rules.md`
 * Windows: `%USERPROFILE%\.codeium\memories\global_rules.md`
 
@@ -111,8 +142,13 @@ This file should reference the detailed policies in `~/.codeium/memories/rules/`
 
 ### 3. Add your global skills
 
-Create skill folders under:
+Create skills directory:
 
+**For Windsurf Editor:**
+* macOS / Linux: `~/.codeium/windsurf/skills/`
+* Windows: `%USERPROFILE%\.codeium\windsurf\skills\`
+
+**For JetBrains IDEs:**
 * macOS / Linux: `~/.codeium/skills/`
 * Windows: `%USERPROFILE%\.codeium\skills\`
 
@@ -136,10 +172,47 @@ Use global skills for:
 
 Do **not** put repository-specific commands into global skills unless clearly marked as examples.
 
+Copy generic skills to global:
+
+```bash
+# For JetBrains IDEs (macOS / Linux)
+mkdir -p ~/.codeium/skills
+cp -r .windsurf/skills/feature-implementation ~/.codeium/skills/
+cp -r .windsurf/skills/test-design ~/.codeium/skills/
+cp -r .windsurf/skills/code-review-prep ~/.codeium/skills/
+cp -r .windsurf/skills/ci-failure-triage ~/.codeium/skills/
+
+# For Windsurf Editor (macOS / Linux)
+mkdir -p ~/.codeium/windsurf/skills
+cp -r .windsurf/skills/feature-implementation ~/.codeium/windsurf/skills/
+cp -r .windsurf/skills/test-design ~/.codeium/windsurf/skills/
+cp -r .windsurf/skills/code-review-prep ~/.codeium/windsurf/skills/
+cp -r .windsurf/skills/ci-failure-triage ~/.codeium/windsurf/skills/
+
+# For JetBrains IDEs (Windows PowerShell)
+New-Item -ItemType Directory -Force "$HOME\.codeium\skills"
+Copy-Item -Path ".windsurf\skills\feature-implementation" -Destination "$HOME\.codeium\skills\" -Recurse
+Copy-Item -Path ".windsurf\skills\test-design" -Destination "$HOME\.codeium\skills\" -Recurse
+Copy-Item -Path ".windsurf\skills\code-review-prep" -Destination "$HOME\.codeium\skills\" -Recurse
+Copy-Item -Path ".windsurf\skills\ci-failure-triage" -Destination "$HOME\.codeium\skills\" -Recurse
+
+# For Windsurf Editor (Windows PowerShell)
+New-Item -ItemType Directory -Force "$HOME\.codeium\windsurf\skills"
+Copy-Item -Path ".windsurf\skills\feature-implementation" -Destination "$HOME\.codeium\windsurf\skills\" -Recurse
+Copy-Item -Path ".windsurf\skills\test-design" -Destination "$HOME\.codeium\windsurf\skills\" -Recurse
+Copy-Item -Path ".windsurf\skills\code-review-prep" -Destination "$HOME\.codeium\windsurf\skills\" -Recurse
+Copy-Item -Path ".windsurf\skills\ci-failure-triage" -Destination "$HOME\.codeium\windsurf\skills\" -Recurse
+```
+
 ### 4. Add your global workflows (optional)
 
 Create workflow files under:
 
+**For Windsurf Editor:**
+* macOS / Linux: `~/.codeium/windsurf/global_workflows/`
+* Windows: `%USERPROFILE%\.codeium\windsurf\global_workflows\`
+
+**For JetBrains IDEs:**
 * macOS / Linux: `~/.codeium/global_workflows/`
 * Windows: `%USERPROFILE%\.codeium\global_workflows\`
 
@@ -161,34 +234,57 @@ Use global workflows for:
 You can copy workspace workflows to global location:
 
 ```bash
-# macOS / Linux
+# For JetBrains IDEs (macOS / Linux)
 mkdir -p ~/.codeium/global_workflows
 cp .windsurf/workflows/*.md ~/.codeium/global_workflows/
 
-# Windows PowerShell
+# For Windsurf Editor (macOS / Linux)
+mkdir -p ~/.codeium/windsurf/global_workflows
+cp .windsurf/workflows/*.md ~/.codeium/windsurf/global_workflows/
+
+# For JetBrains IDEs (Windows PowerShell)
 New-Item -ItemType Directory -Force "$HOME\.codeium\global_workflows"
 Copy-Item -Path ".windsurf\workflows\*.md" -Destination "$HOME\.codeium\global_workflows\" -Recurse
+
+# For Windsurf Editor (Windows PowerShell)
+New-Item -ItemType Directory -Force "$HOME\.codeium\windsurf\global_workflows"
+Copy-Item -Path ".windsurf\workflows\*.md" -Destination "$HOME\.codeium\windsurf\global_workflows\" -Recurse
 ```
 
 ### 5. Add your global hooks (optional)
 
 Create hooks directory and configuration:
 
+**For Windsurf Editor:**
+* macOS / Linux: `~/.codeium/windsurf/hooks/` and `~/.codeium/windsurf/hooks.json`
+* Windows: `%USERPROFILE%\.codeium\windsurf\hooks\` and `%USERPROFILE%\.codeium\windsurf\hooks.json`
+
+**For JetBrains IDEs:**
 * macOS / Linux: `~/.codeium/hooks/` and `~/.codeium/hooks.json`
 * Windows: `%USERPROFILE%\.codeium\hooks\` and `%USERPROFILE%\.codeium\hooks.json`
 
 Copy hook scripts to global location:
 
 ```bash
-# macOS / Linux
+# For JetBrains IDEs (macOS / Linux)
 mkdir -p ~/.codeium/hooks
 cp hooks/*.py ~/.codeium/hooks/
 cp .windsurf/hooks.json ~/.codeium/hooks.json
 
-# Windows PowerShell
+# For Windsurf Editor (macOS / Linux)
+mkdir -p ~/.codeium/windsurf/hooks
+cp hooks/*.py ~/.codeium/windsurf/hooks/
+cp .windsurf/hooks.json ~/.codeium/windsurf/hooks.json
+
+# For JetBrains IDEs (Windows PowerShell)
 New-Item -ItemType Directory -Force "$HOME\.codeium\hooks"
 Copy-Item -Path "hooks\*.py" -Destination "$HOME\.codeium\hooks\" -Recurse
 Copy-Item -Path ".windsurf\hooks.json" -Destination "$HOME\.codeium\hooks.json"
+
+# For Windsurf Editor (Windows PowerShell)
+New-Item -ItemType Directory -Force "$HOME\.codeium\windsurf\hooks"
+Copy-Item -Path "hooks\*.py" -Destination "$HOME\.codeium\windsurf\hooks\" -Recurse
+Copy-Item -Path ".windsurf\hooks.json" -Destination "$HOME\.codeium\windsurf\hooks.json"
 ```
 
 Use global hooks for:

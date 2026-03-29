@@ -344,30 +344,48 @@ See `docs/architecture-rationale.md` for detailed explanation.
 Set up global configuration on your machine:
 
 ```bash
-# Create global directories
+# For JetBrains IDEs
 mkdir -p ~/.codeium/memories
 mkdir -p ~/.codeium/memories/rules
 mkdir -p ~/.codeium/skills
-
-# Copy workspace rules to global location (optional)
 cp -r .windsurf/rules/* ~/.codeium/memories/rules/
 
+# For Windsurf Editor
+mkdir -p ~/.codeium/windsurf/memories
+mkdir -p ~/.codeium/windsurf/memories/rules
+mkdir -p ~/.codeium/windsurf/skills
+cp -r .windsurf/rules/* ~/.codeium/windsurf/memories/rules/
+
 # Create global rules file that references detailed policies
-# Edit: ~/.codeium/memories/global_rules.md
+# For JetBrains: Edit ~/.codeium/memories/global_rules.md
+# For Windsurf: Edit ~/.codeium/windsurf/memories/global_rules.md
 # See examples/global_rules.md for a template
 
 # Copy generic skills to global
+# For JetBrains IDEs:
 cp -r .windsurf/skills/feature-implementation ~/.codeium/skills/
 cp -r .windsurf/skills/test-design ~/.codeium/skills/
+# For Windsurf Editor:
+cp -r .windsurf/skills/feature-implementation ~/.codeium/windsurf/skills/
+cp -r .windsurf/skills/test-design ~/.codeium/windsurf/skills/
 
 # Copy workflows to global (optional)
+# For JetBrains IDEs:
 mkdir -p ~/.codeium/global_workflows
 cp .windsurf/workflows/*.md ~/.codeium/global_workflows/
+# For Windsurf Editor:
+mkdir -p ~/.codeium/windsurf/global_workflows
+cp .windsurf/workflows/*.md ~/.codeium/windsurf/global_workflows/
 
 # Copy hooks to global (optional)
+# For JetBrains IDEs:
 mkdir -p ~/.codeium/hooks
 cp hooks/*.py ~/.codeium/hooks/
 cp .windsurf/hooks.json ~/.codeium/hooks.json
+# For Windsurf Editor:
+mkdir -p ~/.codeium/windsurf/hooks
+cp hooks/*.py ~/.codeium/windsurf/hooks/
+cp .windsurf/hooks.json ~/.codeium/windsurf/hooks.json
 ```
 
 ### Share with Team
