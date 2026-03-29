@@ -380,12 +380,14 @@ cp .windsurf/workflows/*.md ~/.codeium/windsurf/global_workflows/
 # Copy hooks to global (optional)
 # For JetBrains IDEs:
 mkdir -p ~/.codeium/hooks
-cp hooks/*.py ~/.codeium/hooks/
+cp .windsurf/hooks/*.py ~/.codeium/hooks/
 cp .windsurf/hooks.json ~/.codeium/hooks.json
+# Update paths in hooks.json from .windsurf/hooks/ to ~/.codeium/hooks/
 # For Windsurf Editor:
 mkdir -p ~/.codeium/windsurf/hooks
-cp hooks/*.py ~/.codeium/windsurf/hooks/
+cp .windsurf/hooks/*.py ~/.codeium/windsurf/hooks/
 cp .windsurf/hooks.json ~/.codeium/windsurf/hooks.json
+# Update paths in hooks.json from .windsurf/hooks/ to ~/.codeium/windsurf/hooks/
 ```
 
 ### Share with Team

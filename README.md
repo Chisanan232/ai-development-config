@@ -26,7 +26,7 @@ Windsurf supports the following relevant configuration layers:
 * **Global Rules**: `~/.codeium/memories/global_rules.md`
 * **Workspace Skills**: `.windsurf/skills/`
 * **Global Skills**: `~/.codeium/skills/`
-* **Workspace Hooks**: `.windsurf/hooks.json` and `hooks/`
+* **Workspace Hooks**: `.windsurf/hooks.json` and `.windsurf/hooks/`
 * **Global Hooks**: `~/.codeium/hooks.json` and `~/.codeium/hooks/`
 * **Workspace Workflows**: `.windsurf/workflows/`
 * **Global Workflows**: `~/.codeium/global_workflows/`
@@ -268,23 +268,27 @@ Copy hook scripts to global location:
 ```bash
 # For JetBrains IDEs (macOS / Linux)
 mkdir -p ~/.codeium/hooks
-cp hooks/*.py ~/.codeium/hooks/
+cp .windsurf/hooks/*.py ~/.codeium/hooks/
 cp .windsurf/hooks.json ~/.codeium/hooks.json
+# Update paths in hooks.json from .windsurf/hooks/ to ~/.codeium/hooks/
 
 # For Windsurf Editor (macOS / Linux)
 mkdir -p ~/.codeium/windsurf/hooks
-cp hooks/*.py ~/.codeium/windsurf/hooks/
+cp .windsurf/hooks/*.py ~/.codeium/windsurf/hooks/
 cp .windsurf/hooks.json ~/.codeium/windsurf/hooks.json
+# Update paths in hooks.json from .windsurf/hooks/ to ~/.codeium/windsurf/hooks/
 
 # For JetBrains IDEs (Windows PowerShell)
 New-Item -ItemType Directory -Force "$HOME\.codeium\hooks"
-Copy-Item -Path "hooks\*.py" -Destination "$HOME\.codeium\hooks\" -Recurse
+Copy-Item -Path ".windsurf\hooks\*.py" -Destination "$HOME\.codeium\hooks\" -Recurse
 Copy-Item -Path ".windsurf\hooks.json" -Destination "$HOME\.codeium\hooks.json"
+# Update paths in hooks.json from .windsurf/hooks/ to ~/.codeium/hooks/
 
 # For Windsurf Editor (Windows PowerShell)
 New-Item -ItemType Directory -Force "$HOME\.codeium\windsurf\hooks"
-Copy-Item -Path "hooks\*.py" -Destination "$HOME\.codeium\windsurf\hooks\" -Recurse
+Copy-Item -Path ".windsurf\hooks\*.py" -Destination "$HOME\.codeium\windsurf\hooks\" -Recurse
 Copy-Item -Path ".windsurf\hooks.json" -Destination "$HOME\.codeium\windsurf\hooks.json"
+# Update paths in hooks.json from .windsurf/hooks/ to ~/.codeium/windsurf/hooks/
 ```
 
 Use global hooks for:
