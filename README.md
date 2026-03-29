@@ -26,7 +26,8 @@ Windsurf supports the following relevant configuration layers:
 * **Global Rules**: `~/.codeium/memories/global_rules.md`
 * **Workspace Skills**: `.windsurf/skills/`
 * **Global Skills**: `~/.codeium/skills/`
-* **Workspace Hooks**: `.windsurf/hooks.json`
+* **Workspace Hooks**: `.windsurf/hooks.json` and `hooks/`
+* **Global Hooks**: `~/.codeium/hooks.json` and `~/.codeium/hooks/`
 * **Workspace Workflows**: `.windsurf/workflows/`
 * **Global Workflows**: `~/.codeium/global_workflows/`
 
@@ -168,6 +169,35 @@ cp .windsurf/workflows/*.md ~/.codeium/global_workflows/
 New-Item -ItemType Directory -Force "$HOME\.codeium\global_workflows"
 Copy-Item -Path ".windsurf\workflows\*.md" -Destination "$HOME\.codeium\global_workflows\" -Recurse
 ```
+
+### 5. Add your global hooks (optional)
+
+Create hooks directory and configuration:
+
+* macOS / Linux: `~/.codeium/hooks/` and `~/.codeium/hooks.json`
+* Windows: `%USERPROFILE%\.codeium\hooks\` and `%USERPROFILE%\.codeium\hooks.json`
+
+Copy hook scripts to global location:
+
+```bash
+# macOS / Linux
+mkdir -p ~/.codeium/hooks
+cp hooks/*.py ~/.codeium/hooks/
+cp .windsurf/hooks.json ~/.codeium/hooks.json
+
+# Windows PowerShell
+New-Item -ItemType Directory -Force "$HOME\.codeium\hooks"
+Copy-Item -Path "hooks\*.py" -Destination "$HOME\.codeium\hooks\" -Recurse
+Copy-Item -Path ".windsurf\hooks.json" -Destination "$HOME\.codeium\hooks.json"
+```
+
+Use global hooks for:
+
+* universal safety checks (blocking dangerous commands)
+* personal coding standards (multi-language policy engine)
+* audit logging across all projects
+
+**See**: `docs/hooks-guide.md` for detailed hooks documentation and setup
 
 ---
 

@@ -2,26 +2,26 @@
   "hooks": {
     "post_write_code": [
       {
-        "command": "python3 hooks/policy_engine.py",
+        "command": "python3 ~/.codeium/hooks/policy_engine.py",
         "show_output": true,
         "description": "Enforce scope-aware project policies on code changes"
       },
       {
-        "command": "python3 hooks/quality_gate.py",
+        "command": "python3 ~/.codeium/hooks/quality_gate.py",
         "show_output": true,
         "description": "Run lightweight quality checks on modified files"
       }
     ],
     "pre_run_command": [
       {
-        "command": "python3 hooks/block_dangerous_commands.py",
+        "command": "python3 ~/.codeium/hooks/block_dangerous_commands.py",
         "show_output": true,
         "description": "Block dangerous commands from running"
       }
     ],
     "post_run_command": [
       {
-        "command": "python3 hooks/audit_log.py",
+        "command": "python3 ~/.codeium/hooks/audit_log.py",
         "show_output": false,
         "description": "Log command execution for audit trail"
       }

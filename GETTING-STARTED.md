@@ -363,6 +363,11 @@ cp -r .windsurf/skills/test-design ~/.codeium/skills/
 # Copy workflows to global (optional)
 mkdir -p ~/.codeium/global_workflows
 cp .windsurf/workflows/*.md ~/.codeium/global_workflows/
+
+# Copy hooks to global (optional)
+mkdir -p ~/.codeium/hooks
+cp hooks/*.py ~/.codeium/hooks/
+cp .windsurf/hooks.json ~/.codeium/hooks.json
 ```
 
 ### Share with Team
