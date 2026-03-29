@@ -12,20 +12,6 @@
 services:
 
   # Add logging configuration for easier debugging
-  mcp-github:
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  mcp-slack:
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
   mcp-jira:
     logging:
       driver: "json-file"

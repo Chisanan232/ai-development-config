@@ -84,6 +84,72 @@
         "hashicorp/terraform-mcp-server"
       ],
       "command": "docker"
+    },
+    "jira": {
+      "serverUrl": "http://localhost:8100/mcp",
+      "disabled": true,
+      "metadata": {
+        "capability": "issue_tracking",
+        "priority": "optional",
+        "description": "Task and issue tracking",
+        "docker_service": "mcp-jira",
+        "note": "Requires docker compose --profile optional up -d mcp-jira"
+      }
+    },
+    "clickup": {
+      "serverUrl": "http://localhost:8101/mcp/mcp",
+      "disabled": true,
+      "metadata": {
+        "capability": "issue_tracking",
+        "priority": "optional",
+        "description": "Task and issue tracking (alternative to JIRA)",
+        "docker_service": "mcp-clickup",
+        "note": "Requires docker compose --profile optional up -d mcp-clickup"
+      }
+    },
+    "codecov": {
+      "serverUrl": "http://localhost:8105/mcp",
+      "disabled": true,
+      "metadata": {
+        "capability": "coverage_reporting",
+        "priority": "recommended",
+        "description": "Test coverage tracking and reporting",
+        "docker_service": "mcp-codecov",
+        "note": "Requires docker compose up -d mcp-codecov"
+      }
+    },
+    "datadog": {
+      "serverUrl": "http://localhost:8106/mcp",
+      "disabled": true,
+      "metadata": {
+        "capability": "observability",
+        "priority": "optional",
+        "description": "Production monitoring and metrics",
+        "docker_service": "mcp-datadog",
+        "note": "Requires docker compose --profile optional up -d mcp-datadog"
+      }
+    },
+    "sentry": {
+      "serverUrl": "http://localhost:8107/mcp",
+      "disabled": true,
+      "metadata": {
+        "capability": "observability",
+        "priority": "optional",
+        "description": "Error tracking and monitoring",
+        "docker_service": "mcp-sentry",
+        "note": "Requires docker compose --profile optional up -d mcp-sentry"
+      }
+    },
+    "confluence": {
+      "serverUrl": "http://localhost:8108/mcp",
+      "disabled": true,
+      "metadata": {
+        "capability": "knowledge_search",
+        "priority": "optional",
+        "description": "Documentation and knowledge base search",
+        "docker_service": "mcp-confluence",
+        "note": "Requires docker compose --profile optional up -d mcp-confluence"
+      }
     }
   }
 }
