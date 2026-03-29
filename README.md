@@ -281,12 +281,16 @@ Use Workflows for manual checklists:
 Use Hooks for enforcement and auditing:
 
 * blocking dangerous commands
-* lightweight quality checks
+* lightweight quality checks (multi-language support)
 * audit logging
 * project-specific safety policies
 
+The policy engine hook supports **Python, TypeScript/JavaScript, React, Vue, Java, Kotlin, Scala, Rust, and Go** with language-specific checkers.
+
 Keep hook config simple.
 Put real conditional logic into scripts.
+
+**See**: `docs/hooks-guide.md` for detailed hooks documentation and language support
 
 ---
 
