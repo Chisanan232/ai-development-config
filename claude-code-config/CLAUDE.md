@@ -138,3 +138,16 @@ Claude Code must follow these rules on every implementation task, without except
 - Type hints must never change runtime behavior.
 - Run `mypy src/` before every commit.
 - Type checker config: [PROJECT-SPECIFIC — e.g., see `pyproject.toml [tool.mypy]`]
+
+---
+
+## Linting and Formatting Policy
+
+[LANGUAGE-SPECIFIC — adjust per repo]
+
+- Linter: [PROJECT-SPECIFIC — e.g., ruff]
+- Formatter: [PROJECT-SPECIFIC — e.g., ruff format]
+- Pre-commit hooks enforce both.
+- All lint errors must be fixed before committing.
+- Do not use `# noqa` without a comment explaining the exception.
+- Config: [PROJECT-SPECIFIC — e.g., see `pyproject.toml [tool.ruff]`]
