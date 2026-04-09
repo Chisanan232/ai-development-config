@@ -11,6 +11,11 @@
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
       },
       "capabilities": ["code_repository", "issue_tracking"]
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "capabilities": ["fetch"]
     }
   }
 }
