@@ -273,3 +273,23 @@ the root cause: race conditions, shared state, external dependencies, timing ass
 | [JIRA / Linear / etc.] | Sprint planning and task tracking | [PROJECT-SPECIFIC] |
 | [Confluence / Notion / etc.] | Architecture decisions and runbooks | [PROJECT-SPECIFIC] |
 | [Slack channel] | Team discussion and incident alerts | [PROJECT-SPECIFIC] |
+
+---
+
+## MCP-Backed Systems
+
+Claude Code can use MCP-connected tools when available. Check `.mcp.json` for
+what is configured in this project. The following capability categories may be available:
+
+| Capability | What it provides | When to use |
+|---|---|---|
+| `code_repository` | Git operations, PR creation, branch management | Branching, PRs, diffs |
+| `issue_tracking` | Read/write issues and tickets | Linking commits to issues |
+| `communication` | Post to Slack, notify teams | Status updates on deploys |
+| `static_analysis` | SonarQube quality gates, code smells | Pre-PR quality checks |
+| `coverage_reporting` | Codecov coverage trends | Coverage regression detection |
+| `observability` | Datadog, Sentry alerts, logs | Incident triage |
+| `knowledge_search` | Confluence, Notion, internal docs | Architecture lookups |
+
+When an MCP-backed capability is available for a task, prefer it over manual
+approximation. When it is not available, proceed without it and note the gap.
