@@ -293,3 +293,37 @@ what is configured in this project. The following capability categories may be a
 
 When an MCP-backed capability is available for a task, prefer it over manual
 approximation. When it is not available, proceed without it and note the gap.
+
+---
+
+## Skill Invocation Guide
+
+The following skills are available for this repository. Invoke them by their
+slash command or by asking Claude Code to run the named procedure.
+
+| Skill | Type | When to use |
+|---|---|---|
+| `feature-implementation` | Auto | When implementing any new feature |
+| `test-design` | Auto | When designing tests for new or changed code |
+| `code-review-prep` | Auto | Before opening a PR |
+| `ci-failure-triage` | Auto | When CI is red |
+| `python-mypy-debugging` | Auto | When mypy reports type errors |
+| `python-ruff-fixing` | Auto | When ruff reports lint violations |
+| `python-precommit-repair` | Auto | When pre-commit hooks fail |
+| `/pr-readiness` | Command | Before opening a PR (full checklist run) |
+| `/release-readiness` | Command | Before tagging a release |
+| `/dependency-upgrade-review` | Command | Before merging a dependency bump PR |
+
+---
+
+## What Claude Code Must Never Do Without Explicit Confirmation
+
+- Delete any file
+- Force-push to any branch
+- Run `git reset --hard`
+- Run `git clean -fd`
+- Drop or truncate database tables
+- Pipe remote content directly to a shell (`curl | bash`)
+- Publish packages to registries
+- Modify CI/CD pipeline definitions without review
+- Commit `.env` or any file containing credentials
