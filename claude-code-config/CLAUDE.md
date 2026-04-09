@@ -260,3 +260,16 @@ When CI fails, Claude Code must follow this sequence:
 
 Flaky tests indicate real problems. Do not mark them as skip. Investigate
 the root cause: race conditions, shared state, external dependencies, timing assumptions.
+
+---
+
+## Source-of-Truth Systems
+
+[PROJECT-SPECIFIC — describe where canonical information lives for this project]
+
+| System | Purpose | Reference |
+|---|---|---|
+| GitHub Issues | Bug tracking and feature requests | [PROJECT-SPECIFIC] |
+| [JIRA / Linear / etc.] | Sprint planning and task tracking | [PROJECT-SPECIFIC] |
+| [Confluence / Notion / etc.] | Architecture decisions and runbooks | [PROJECT-SPECIFIC] |
+| [Slack channel] | Team discussion and incident alerts | [PROJECT-SPECIFIC] |
