@@ -151,3 +151,52 @@ Claude Code must follow these rules on every implementation task, without except
 - All lint errors must be fixed before committing.
 - Do not use `# noqa` without a comment explaining the exception.
 - Config: [PROJECT-SPECIFIC — e.g., see `pyproject.toml [tool.ruff]`]
+
+---
+
+## Commit Policy
+
+Every commit must be:
+
+- **Atomic**: one logical concern per commit. If you need two sentences to describe it, split it.
+- **Small**: prefer many small commits over one large commit.
+- **Bisectable**: the repository must be in a working state after every commit.
+- **Descriptive**: subject line under 72 characters in imperative mood.
+
+### Commit message format
+
+```
+<emoji> <scope>: <imperative summary under 72 chars>
+
+[Optional body: what changed and why. Not how.]
+
+[Optional footer: closes #123, refs #456]
+```
+
+### GitEmoji conventions for this repo
+
+[ORG POLICY — adjust to your organization's emoji set]
+
+| Emoji | Scope |
+|---|---|
+| `✨` | New feature |
+| `🐛` | Bug fix |
+| `♻️` | Refactor |
+| `✅` | Tests |
+| `📝` | Documentation |
+| `🔧` | Configuration |
+| `🔌` | MCP / integrations |
+| `🪝` | Hooks |
+| `👨‍💻` | Skills |
+| `🧭` | Workflow skills |
+| `⬆️` | Dependency upgrade |
+| `🗑️` | Delete / remove |
+| `🚨` | Fix linting / type errors |
+
+### What not to commit
+
+- `.env` files or secrets of any kind
+- Build artifacts, compiled outputs
+- IDE-specific files not in `.gitignore`
+- Large binary files
+- Commented-out dead code
