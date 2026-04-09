@@ -98,3 +98,27 @@ Claude Code must follow these rules on every implementation task, without except
 19. Never skip pre-commit hooks (`--no-verify`) without explicit user confirmation.
 20. If you discover unexpected repository state (unfamiliar files, branches, config),
     investigate before acting. Do not delete or overwrite unknown state.
+
+---
+
+## Testing Expectations
+
+[REFINE FOR THIS REPO]
+
+- All new features require tests. All bug fixes require a regression test.
+- Tests must be deterministic, isolated, and fast.
+- Unit tests live in `tests/unit/`. Integration tests live in `tests/integration/`.
+- Test behavior, not implementation. Tests must not assert on private internals.
+- Do not mock the database in integration tests — use a real test database.
+  [PROJECT-SPECIFIC: adjust this to match your actual test strategy]
+- Do not disable failing tests. Fix them or escalate.
+- Coverage is a metric, not the goal. Meaningful tests matter more than coverage %.
+- Minimum coverage threshold: [PROJECT-SPECIFIC — e.g., 85%]
+- Run impacted tests during iteration. Run the full suite before committing.
+
+### Test tooling
+
+- Test runner: [PROJECT-SPECIFIC — e.g., pytest]
+- Coverage tool: [PROJECT-SPECIFIC — e.g., pytest-cov]
+- Fixture strategy: [PROJECT-SPECIFIC — e.g., factory_boy for model factories]
+- Mocking: [PROJECT-SPECIFIC — e.g., unittest.mock; no third-party mock libs]
