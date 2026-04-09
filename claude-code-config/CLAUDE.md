@@ -27,3 +27,35 @@ violated. Examples below:]
 - All external HTTP calls must use the client in `src/http/client.py`, never raw `requests`.
 - Configuration must be loaded from environment variables; no hardcoded values.
 - Do not introduce new top-level packages without discussion.
+
+---
+
+## Package, Build, and Run Commands
+
+[PROJECT-SPECIFIC — fill in the exact commands for this repository]
+
+```bash
+# Install dependencies
+[e.g., uv sync --all-extras]
+
+# Run tests (impacted, fast)
+[e.g., pytest tests/unit/ -x --tb=short]
+
+# Run tests (full suite)
+[e.g., pytest tests/ --tb=short]
+
+# Lint
+[e.g., ruff check .]
+
+# Format
+[e.g., ruff format .]
+
+# Type check
+[e.g., mypy src/]
+
+# Pre-commit hooks
+[e.g., pre-commit run --all-files]
+
+# Build
+[e.g., docker build -t myapp:dev .]
+```
