@@ -200,3 +200,35 @@ Every commit must be:
 - IDE-specific files not in `.gitignore`
 - Large binary files
 - Commented-out dead code
+
+---
+
+## Pull Request Policy
+
+### Before opening a PR
+
+- All tests pass locally.
+- All lint and type checks pass locally.
+- Pre-commit hooks pass.
+- CI is not blocked by an unrelated red branch.
+- You have reviewed your own diff before requesting review.
+
+### PR size and scope
+
+- Keep PRs under 500 lines when possible.
+- One concern per PR. Do not bundle unrelated changes.
+- If a change is large, break it into a sequence of stacked PRs.
+
+### PR description must include
+
+1. What changed (one paragraph)
+2. Why it changed (motivation, context, issue reference)
+3. How to verify (manual steps or automated test reference)
+4. Related issues / tickets: `Closes #[PROJECT-SPECIFIC]`
+
+### Review process
+
+- Address all reviewer comments before merging.
+- Do not force-push during active review.
+- CI must be green before merging.
+- Merge strategy: [PROJECT-SPECIFIC — e.g., squash merge / rebase merge]
