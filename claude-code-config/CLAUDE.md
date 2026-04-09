@@ -122,3 +122,19 @@ Claude Code must follow these rules on every implementation task, without except
 - Coverage tool: [PROJECT-SPECIFIC — e.g., pytest-cov]
 - Fixture strategy: [PROJECT-SPECIFIC — e.g., factory_boy for model factories]
 - Mocking: [PROJECT-SPECIFIC — e.g., unittest.mock; no third-party mock libs]
+
+---
+
+## Type Checking Policy
+
+[LANGUAGE-SPECIFIC — this section applies to Python projects using mypy or pyright]
+
+- All public APIs must have complete type annotations.
+- All function signatures must be annotated (parameters + return type).
+- All class attributes must be annotated at the class level.
+- Use modern Python generics: `list[str]`, `dict[str, int]`, `X | Y` (Python 3.10+).
+- Do not use `Any` without a code comment explaining why.
+- Suppress type errors with `# type: ignore[error-code]` only, never bare `# type: ignore`.
+- Type hints must never change runtime behavior.
+- Run `mypy src/` before every commit.
+- Type checker config: [PROJECT-SPECIFIC — e.g., see `pyproject.toml [tool.mypy]`]
