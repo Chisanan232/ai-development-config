@@ -14,3 +14,16 @@
 - **Primary language**: [PROJECT-SPECIFIC — e.g., Python 3.12]
 - **Runtime target**: [PROJECT-SPECIFIC — e.g., AWS Lambda, Docker, CLI]
 - **Dependency policy**: [PROJECT-SPECIFIC — e.g., pin all transitive deps]
+
+---
+
+## Architecture Constraints
+
+[REFINE FOR THIS REPO — describe the key architectural decisions that must not be
+violated. Examples below:]
+
+- This is a monorepo. Services are in `services/`. Shared libraries are in `lib/`.
+- Database access must go through the repository layer in `src/db/`.
+- All external HTTP calls must use the client in `src/http/client.py`, never raw `requests`.
+- Configuration must be loaded from environment variables; no hardcoded values.
+- Do not introduce new top-level packages without discussion.
