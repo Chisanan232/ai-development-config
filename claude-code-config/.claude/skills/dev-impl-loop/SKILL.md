@@ -183,8 +183,21 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
 - Phase 2 (full suite repair): max **3 consecutive failures** or **30 min** elapsed.
 - Phase 5 (post-QA repair): max **3 QA rejection cycles** before escalating.
 
-When the circuit breaker trips: stop the loop, write state as "circuit_open",
-report to `dev-lead-agent` with the failure summary.
+When the circuit breaker trips:
+1. Stop the loop immediately.
+2. Write state as "circuit_open" with an escalation reason:
+   ```bash
+   bash ~/.claude/hooks/workflow-state.sh write \
+     "$TICKET" "dev-impl-loop" "[current-step]" "5" "escalated"
+   bash ~/.claude/hooks/decision-log.sh record \
+     --ticket "$TICKET" --agent "dev-agent" --skill "dev-impl-loop" \
+     --phase "[current-phase]" --decision "escalate" \
+     --reason "Circuit open after [N] consecutive failures" \
+     --context "[last failure output summary]"
+   ```
+3. Report to `dev-lead-agent` with the failure summary and ticket reference.
+4. Do not retry until the engineer resets the breaker:
+   `bash ~/.claude/hooks/circuit-breaker-gate.sh reset $TICKET`
 
 ## Output
 On successful completion: PR opened, linked to ticket, workflow state = complete.

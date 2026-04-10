@@ -19,33 +19,55 @@ session is interrupted (crash, context limit, manual stop) and needs to continue
 ## Steps
 
 ### Phase 1 — Read persisted state
-1. Read the workflow state file for the target ticket:
+1. Resolve the ticket reference:
    ```bash
-   bash ~/.claude/hooks/workflow-state.sh read "[ticket-ref]"
+   TICKET="${CLAUDE_CURRENT_TICKET:-$(cat .claude/.current-ticket 2>/dev/null || echo '[ticket-ref]')}"
+   ```
+2. Read the workflow state file for the target ticket:
+   ```bash
+   bash ~/.claude/hooks/workflow-state.sh read "$TICKET"
    ```
    Expected output fields: `workflow`, `step`, `total_steps`, `status`, `timestamp`.
-2. If no state file exists:
-   - Report: "No workflow state found for [ticket-ref]."
+3. If no state file exists:
+   - Report: "No workflow state found for $TICKET."
    - Do not guess the resume point. Ask the engineer which phase to enter.
-3. If the state file exists but `status` is "complete":
-   - Report: "Workflow for [ticket-ref] is already marked complete."
+4. If `status` is "complete":
+   - Report: "Workflow for $TICKET is already marked complete."
    - Verify the PR was opened and ticket was closed. If not, escalate.
+5. **If `status` is "escalated"**: surface this prominently before any other step.
+   ```
+   ⚠️  UNRESOLVED ESCALATION — do not resume until this is addressed.
+
+   Ticket:       $TICKET
+   Escalated at: [timestamp from state file]
+   Reason:       [escalation_reason from state file]
+
+   Required action before resuming:
+   1. Read the escalation reason above.
+   2. Resolve the root cause (e.g., reset circuit breaker, clarify requirements).
+   3. Run: bash ~/.claude/hooks/circuit-breaker-gate.sh reset $TICKET
+   4. Then re-run /workflow-resume $TICKET
+   ```
+   Do NOT proceed past this step until the engineer confirms resolution.
+6. If `status` is "circuit_open":
+   - Surface the same block as above.
+   - Confirm circuit breaker has been manually reset before resuming.
 
 ### Phase 2 — Environment verification
-4. Confirm the circuit breaker for this ticket is in "closed" state:
+7. Confirm the circuit breaker for this ticket is in "closed" state:
    ```bash
-   bash ~/.claude/hooks/circuit-breaker-gate.sh check "[ticket-ref]"
+   bash ~/.claude/hooks/circuit-breaker-gate.sh check "$TICKET"
    ```
-   If open: stop. Report the open circuit to the engineer.
-5. Confirm the git branch matches the ticket's expected branch:
+   If open: stop. Surface the same escalation block from Phase 1, step 5.
+8. Confirm the git branch matches the ticket's expected branch:
    ```bash
    git branch --show-current
    ```
-6. Run `git fetch && git status` to confirm the branch is clean and not behind.
-7. If the working tree is dirty: identify the uncommitted changes.
-   - If they look like in-progress work from the interrupted session:
-     review with the engineer before discarding or committing.
-   - Do not run `git clean` or `git reset --hard` without explicit confirmation.
+9. Run `git fetch && git status` to confirm the branch is clean and not behind.
+10. If the working tree is dirty: identify the uncommitted changes.
+    - If they look like in-progress work from the interrupted session:
+      review with the engineer before discarding or committing.
+    - Do not run `git clean` or `git reset --hard` without explicit confirmation.
 
 ### Phase 3 — Determine resume point
 8. Map the recorded `step` and `workflow` to the correct phase:
