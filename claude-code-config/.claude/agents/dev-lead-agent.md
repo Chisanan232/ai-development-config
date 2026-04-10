@@ -27,6 +27,15 @@ implementation code or execute focused repairs directly.
 - Assign each sub-ticket to the appropriate agent (`dev-agent`, `qa-agent`).
 - Update parent ticket state when decomposition is complete.
 
+### Cross-repo ticket coordination
+- When a ticket requires changes across more than one repository, invoke
+  `cross-repo-coordinator` skill instead of single-repo `task-decomposition`.
+- This skill creates per-repo sub-tickets, monitors PRs across repos, gates
+  all merges until all sub-tickets pass QA, runs integration verification,
+  and coordinates merge order before closing the parent ticket.
+- Use the **parent ticket ref** as the session-memory anchor across all repos.
+- Do not merge any per-repo PR until all repos have cleared the integration gate.
+
 ### PR review and merge decisions
 - Review open PRs on the current branch or repository.
 - Check: scope matches the ticket, tests are present, CI is green, no stray changes.
@@ -60,6 +69,7 @@ implementation code or execute focused repairs directly.
 ## Skills used
 - `ticket-intake`
 - `task-decomposition`
+- `cross-repo-coordinator`
 - `pr-health-check`
 - `bot-pr-maintainer`
 - `code-review-prep`
