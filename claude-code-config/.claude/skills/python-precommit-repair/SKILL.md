@@ -1,5 +1,10 @@
 # SKILL.md — python-precommit-repair
 
+> **Language**: Python (primary). This skill covers pre-commit hook repair for
+> Python-tooled hooks (ruff, mypy, black, isort, etc.). The general pre-commit
+> repair sequence applies to any language — adapt the tool-specific fix steps
+> for your stack's hooks.
+
 ## Purpose
 Diagnose and fix pre-commit hook failures so that commits can proceed cleanly.
 

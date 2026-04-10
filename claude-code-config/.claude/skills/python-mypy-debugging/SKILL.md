@@ -1,5 +1,9 @@
 # SKILL.md — python-mypy-debugging
 
+> **Language**: Python. This skill is specific to the mypy type checker.
+> For other languages, create an equivalent skill following the naming convention
+> `<language>-<tool>-debugging` (e.g., `typescript-tsc-debugging`, `go-vet-debugging`).
+
 ## Purpose
 Diagnose and fix mypy type errors correctly, without suppressing them or
 degrading type coverage.

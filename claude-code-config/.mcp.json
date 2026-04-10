@@ -1,5 +1,12 @@
 {
+  "_global_note": "This is the global MCP configuration (~/.claude/.mcp.json). Servers marked 'always-active' are enabled for all projects. Servers marked 'project-opt-in' are disabled by default — enable them in the project's .mcp.json or by providing the required credentials per project.",
   "mcpServers": {
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "capabilities": ["fetch"],
+      "_tier": "always-active"
+    },
     "github": {
       "command": "docker",
       "args": [
@@ -11,12 +18,8 @@
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
       },
       "capabilities": ["code_repository", "issue_tracking"],
+      "_tier": "always-active",
       "_role": "Primary when CLAUDE_ISSUE_TRACKER=github (default). Disable issue_tracking capability if CLAUDE_ISSUE_TRACKER=clickup."
-    },
-    "fetch": {
-      "command": "uvx",
-      "args": ["mcp-server-fetch"],
-      "capabilities": ["fetch"]
     },
     "sonarqube": {
       "command": "docker",
@@ -31,7 +34,9 @@
         "SONAR_HOST_URL": "${SONAR_HOST_URL}"
       },
       "capabilities": ["static_analysis"],
-      "_role": "First-class quality gate: run before every PR merge decision via pr-health-check and pr-readiness skills"
+      "_tier": "project-opt-in",
+      "_role": "First-class quality gate: run before every PR merge decision via pr-health-check and pr-readiness skills. Enable per project by providing SONAR_TOKEN and SONAR_HOST_URL.",
+      "disabled": true
     },
     "codecov": {
       "command": "docker",
@@ -44,6 +49,7 @@
         "CODECOV_TOKEN": "${CODECOV_TOKEN}"
       },
       "capabilities": ["coverage_reporting"],
+      "_tier": "project-opt-in",
       "_role": "Optional: enable when coverage trend tracking is required for PR merge decisions. Used by qa-agent acceptance-validation and pr-readiness skills.",
       "disabled": true
     },
@@ -61,6 +67,7 @@
       },
       "_note": "[VERIFY IMAGE README] Confirm required env vars and runtime args at https://github.com/chisanan232/slack-mcp-server before enabling",
       "capabilities": ["communication"],
+      "_tier": "project-opt-in",
       "disabled": true
     },
     "clickup": {
@@ -74,6 +81,7 @@
         "CLICKUP_API_TOKEN": "${CLICKUP_API_TOKEN}"
       },
       "_note": "[VERIFY IMAGE README] Confirm required env vars and runtime args at https://github.com/chisanan232/clickup-mcp-server before enabling",
+      "_tier": "project-opt-in",
       "_role": "Enable when CLAUDE_ISSUE_TRACKER=clickup. Only one issue_tracking provider should be active at a time.",
       "capabilities": ["issue_tracking"],
       "disabled": true
@@ -84,6 +92,7 @@
         "@microsoft/playwright-mcp",
         "--browser", "chrome"
       ],
+      "_tier": "project-opt-in",
       "_role": "Used by qa-agent for UI acceptance testing — navigate pages, interact with elements via accessibility tree, capture snapshots. Enable for projects with a web UI. Browser: chrome by default; override with --browser firefox|webkit|msedge.",
       "capabilities": ["browser_automation"],
       "disabled": true
@@ -101,6 +110,7 @@
         "DD_APP_KEY": "${DD_APP_KEY}"
       },
       "capabilities": ["observability"],
+      "_tier": "project-opt-in",
       "disabled": true
     }
   }

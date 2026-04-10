@@ -23,28 +23,84 @@ The Claude Code kit lives under `claude-code-config/` and uses Claude Code's nat
 
 | Layer | File/Directory | Purpose |
 |-------|---------------|---------|
-| Project Truth | `CLAUDE.md` | 20-section constitution: identity, architecture, commands, policies, automation rules |
+| Constitution | `CLAUDE.md` | Global behavioral rules, policies, and automation conventions |
 | Agents (role layer) | `.claude/agents/` | Four sub-agent roles: dev-lead, dev, qa, release |
-| Skills (auto-used) | `.claude/skills/` | Trigger automatically on matching tasks (16 skills) |
+| Skills (auto-used) | `.claude/skills/` | Trigger automatically on matching tasks (16+ skills) |
 | Skills (command-like) | `.claude/skills/` | Invoked explicitly (`/pr-readiness`, `/pr-health-check`, etc.) |
 | Hooks | `.claude/hooks/` + `settings.json` | Seven shell-based PreToolUse / PostToolUse enforcement gates |
-| MCP | `.mcp.json` | External capability providers (GitHub, SonarQube, ClickUp, Slack, Codecov, Datadog) |
+| MCP | `.mcp.json` | External capability providers (GitHub, SonarQube, ClickUp, Slack, Playwright, etc.) |
 
-**Quick start for Claude Code:**
+### Global install (recommended)
+
+Install once to your personal `~/.claude/` and it applies to **all your projects**:
 
 ```bash
-# Copy to your repository
-cp claude-code-config/CLAUDE.md /path/to/your/repo/
-cp -r claude-code-config/.claude /path/to/your/repo/
-cp claude-code-config/settings.json /path/to/your/repo/
-cp claude-code-config/.mcp.json /path/to/your/repo/
+# Install to global Claude Code configuration
+cp -r claude-code-config/.claude ~/.claude
+cp claude-code-config/CLAUDE.md ~/.claude/CLAUDE.md
+cp claude-code-config/settings.json ~/.claude/settings.json
+cp claude-code-config/.mcp.json ~/.claude/.mcp.json
 
-# Customize CLAUDE.md — fill in [PROJECT-SPECIFIC] markers
 # Make hooks executable
-chmod +x /path/to/your/repo/.claude/hooks/*.sh
+chmod +x ~/.claude/hooks/*.sh
+
+# Set up your personal env overrides (optional)
+cp ~/.claude/hooks/config.env ~/.claude/config.env
+# Edit ~/.claude/config.env to override paths and env vars
 ```
 
-See `claude-code-config/CLAUDE.md` for the full template and `claude-code-config/settings.json` for hook wiring.
+### Project-level customization
+
+After global install, create a per-repo `.claude/CLAUDE.md` for project-specific
+configuration. This file extends the global one — only add what's specific to this repo:
+
+```bash
+mkdir -p /path/to/your/repo/.claude
+
+cat > /path/to/your/repo/.claude/CLAUDE.md << 'EOF'
+# CLAUDE.md — Project Configuration
+
+## Repository Identity
+- **Repository**: my-project
+- **Purpose**: One sentence describing what this repo does
+- **Owner**: team or individual
+- **Primary language**: Python 3.12
+- **Runtime target**: Docker / AWS Lambda / CLI
+
+## Architecture Constraints
+- [Describe key architectural rules for this repo]
+
+## Package, Build, and Run Commands
+```bash
+uv sync --all-extras        # install
+pytest tests/ --tb=short    # full test suite
+ruff check .                # lint
+mypy src/                   # type check
+pre-commit run --all-files  # pre-commit
+```
+
+## Testing Tooling
+- Test runner: pytest
+- Coverage: pytest-cov (threshold: 85%)
+- Fixtures: factory_boy
+
+## Source-of-Truth Systems
+- GitHub Issues: https://github.com/org/repo/issues
+- Slack: #my-project-dev
+
+## Merge Strategy
+- Feature PRs: squash merge
+- Dependency bumps: rebase merge
+
+## Language-Specific Repair Skills
+- `python-mypy-debugging` — mypy type errors
+- `python-ruff-fixing` — ruff lint violations
+- `python-precommit-repair` — pre-commit hook failures
+EOF
+```
+
+See `claude-code-config/CLAUDE.md` for the full global constitution and
+`GETTING-STARTED.md` for the Claude Code quick start guide.
 
 ---
 

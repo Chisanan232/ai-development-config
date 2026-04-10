@@ -18,12 +18,15 @@ The Claude Code kit lives under `claude-code-config/` and is designed from scrat
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                          CLAUDE.md (20 sections)                    │
-│                   Constitution · Policy · Automation Rules          │
-│  identity · architecture · commands · safe-impl · testing ·        │
-│  commit policy · PR policy · CI triage · auto-merge · bot-PR ·     │
-│  push gate · preconditions · release ops · delegation model ·      │
-│  time-layer · skill guide · forbidden actions                       │
+│              ~/.claude/CLAUDE.md (global, 17 sections)              │
+│            Constitution · Policy · Automation Rules                 │
+│  global/project split · safe-impl · testing · commit policy ·      │
+│  PR policy · CI triage · auto-merge · bot-PR · push gate ·         │
+│  preconditions · release ops · delegation model · time-layer ·     │
+│  skill guide · workflow state · circuit breaker · forbidden actions │
+├─────────────────────────────────────────────────────────────────────┤
+│         .claude/CLAUDE.md (per-project, extends global)             │
+│  identity · architecture · commands · tooling · source-of-truth     │
 └───────────────────────────────┬─────────────────────────────────────┘
                                 │ governs
 ┌───────────────────────────────▼─────────────────────────────────────┐
@@ -89,32 +92,100 @@ The Claude Code kit lives under `claude-code-config/` and is designed from scrat
       (circuit-breaker-gate is now utility-only; called by skills explicitly)
 ```
 
-### Directory Structure
+### Global vs Project Configuration
+
+The Claude Code kit is designed for **global personal installation** at `~/.claude/`.
+This makes the behavioral rules, agents, skills, and hooks available across all your
+projects without per-repo setup. Each project then adds a lightweight `.claude/CLAUDE.md`
+for its specific overrides.
+
+#### Configuration layering
+
+```
+~/.claude/CLAUDE.md          ← global (this kit): behavioral rules, policies, agent model
+    ↓ read first
+.claude/CLAUDE.md            ← project: identity, architecture, commands, tooling
+    ↓ project values override global values
+Claude Code applies the merged result
+```
+
+#### What lives at each layer
+
+| Section | Global `~/.claude/CLAUDE.md` | Project `.claude/CLAUDE.md` |
+|---|---|---|
+| Safe Implementation Policy | ✓ defined here | rarely overridden |
+| Commit / PR / CI Policy | ✓ defined here | add project-specific merge strategy |
+| Agent Delegation Model | ✓ defined here | rarely overridden |
+| Workflow State / Circuit Breaker | ✓ defined here | rarely overridden |
+| Skill Invocation Guide | ✓ generic skills listed | add language-specific repair skills |
+| Repository Identity | — | ✓ defined here |
+| Architecture Constraints | — | ✓ defined here |
+| Package and Build Commands | — | ✓ defined here |
+| Testing Tooling | — | ✓ runner, coverage tool, threshold |
+| Type Checker / Linter | — | ✓ tool name, config location |
+| Source-of-Truth Systems | — | ✓ issue tracker, wiki, Slack |
+
+#### Install commands
+
+```bash
+# One-time global install
+cp -r claude-code-config/.claude ~/.claude
+cp claude-code-config/CLAUDE.md ~/.claude/CLAUDE.md
+cp claude-code-config/settings.json ~/.claude/settings.json
+cp claude-code-config/.mcp.json ~/.claude/.mcp.json
+chmod +x ~/.claude/hooks/*.sh
+
+# Optional: personal env overrides
+cp ~/.claude/hooks/config.env ~/.claude/config.env
+
+# Per-project customization (in each repo)
+mkdir -p .claude
+# Create .claude/CLAUDE.md with Repository Identity, Architecture, Commands, etc.
+echo ".claude/.current-ticket" >> .gitignore
+```
+
+### Directory Structure (after global install)
+
+```
+~/.claude/                               # Global personal installation
+├── CLAUDE.md                            # Global constitution (behavioral rules, policies)
+├── settings.json                        # Hook wiring (PreToolUse / PostToolUse)
+├── .mcp.json                            # MCP capability map (always-active + project-opt-in)
+├── config.env                           # Personal env var overrides (CLAUDE_* variables)
+├── agents/                              # Sub-agent role definitions
+│   ├── dev-lead-agent.md                # Orchestration: decomposition, PR decisions, bot PR coordination
+│   ├── dev-agent.md                     # Implementation: code, tests, local validation, CI repair
+│   ├── qa-agent.md                      # Validation: acceptance criteria, adversarial testing, regressions
+│   └── release-agent.md                 # Observation: release notes, pipeline watch, outcome summary
+├── hooks/
+│   ├── block_dangerous_commands.sh      # PreToolUse[Bash]: blocks rm -rf, force push, curl|bash, etc.
+│   ├── quality_gate.sh                  # PostToolUse[Write|Edit]: debug detection, TODO hygiene, file size
+│   ├── audit_log.sh                     # PostToolUse[Bash]: append-only JSONL audit log with rotation
+│   ├── freshness-gate.sh                # PreToolUse[Bash]: blocks commit/push if branch is behind remote
+│   ├── full-test-gate.sh                # PreToolUse[Bash]: blocks push if tests not re-run after changes
+│   ├── precommit-gate.sh                # PreToolUse[Bash]: runs pre-commit before push, blocks on failure
+│   ├── completion-contract.sh           # PostToolUse[Bash]: exit 2 when TEST RUNNER produces failure output
+│   ├── workflow-state.sh                # Utility: atomic read/write/archive per-ticket phase state
+│   ├── circuit-breaker-gate.sh          # Utility: check/record-failure/record-success/reset per ticket
+│   ├── decision-log.sh                  # Utility: structured decision audit (record/tail/query)
+│   └── config.env                       # Template: copy this to ~/.claude/config.env and customize
+└── skills/
+
+your-repo/                               # Per-project overrides (lightweight)
+├── .claude/
+│   ├── CLAUDE.md                        # Project identity, architecture, commands, tooling
+│   └── .current-ticket                  # Active ticket ref (gitignored, written by ticket-pickup-check)
+└── .mcp.json                            # (optional) project-specific MCP server overrides
+```
+
+### Source directory (this repo)
 
 ```
 claude-code-config/
-├── CLAUDE.md                            # 20-section project truth and policy constitution
+├── CLAUDE.md                            # Global constitution template
 ├── settings.json                        # Hook wiring (PreToolUse / PostToolUse)
 ├── .mcp.json                            # MCP capability map
 └── .claude/
-    ├── agents/                          # Sub-agent role definitions
-    │   ├── dev-lead-agent.md            # Orchestration: decomposition, PR decisions, bot PR coordination
-    │   ├── dev-agent.md                 # Implementation: code, tests, local validation, CI repair
-    │   ├── qa-agent.md                  # Validation: acceptance criteria, adversarial testing, regressions
-    │   └── release-agent.md             # Observation: release notes, pipeline watch, outcome summary
-    ├── hooks/
-    │   ├── block_dangerous_commands.sh  # PreToolUse[Bash]: blocks rm -rf, force push, curl|bash, etc.
-    │   ├── quality_gate.sh              # PostToolUse[Write|Edit]: debug detection, TODO hygiene, file size
-    │   ├── audit_log.sh                 # PostToolUse[Bash]: append-only JSONL audit log with rotation
-    │   ├── freshness-gate.sh            # PreToolUse[Bash]: blocks commit/push if branch is behind remote
-    │   ├── full-test-gate.sh            # PreToolUse[Bash]: blocks push if tests not re-run after changes
-    │   ├── precommit-gate.sh            # PreToolUse[Bash]: runs pre-commit before push, blocks on failure
-    │   ├── completion-contract.sh       # PostToolUse[Bash]: exit 2 when TEST RUNNER produces failure output
-    │   ├── workflow-state.sh            # Utility: atomic read/write/archive per-ticket phase state
-    │   ├── circuit-breaker-gate.sh      # Utility: check/record-failure/record-success/reset per ticket
-    │   ├── decision-log.sh              # Utility: structured decision audit (record/tail/query)
-    │   └── config.env                   # Template: all CLAUDE_* env var overrides (copy to ~/.claude/config.env)
-    └── skills/
         ├── ticket-intake/SKILL.md               # Auto-used: scan tracker, discuss requirements, mark Accepted
         ├── task-decomposition/SKILL.md          # Auto-used: ticket → sub-tickets with states and agent assignments
         ├── ticket-pickup-check/SKILL.md         # Auto-used: state/blocker/assignee gate before implementation
@@ -158,35 +229,47 @@ claude-code-config/
 
 ### CLAUDE.md Sections
 
-The `CLAUDE.md` template covers 22 sections organized in three groups:
+The global `~/.claude/CLAUDE.md` covers 17 sections organized in three groups.
+Project-specific sections (identity, architecture, commands, tooling, source-of-truth)
+live in the per-project `.claude/CLAUDE.md`.
 
-**Engineering policy**
-1. Repository Identity
-2. Architecture Constraints
-3. Package and Build Commands
-4. Safe Implementation Policy
-5. Testing Expectations
-6. Type Checking Policy
-7. Linting and Formatting Policy
-8. Commit Policy
-9. Pull Request Policy
-10. CI/CD Triage Expectations
-11. Source-of-Truth Systems
-12. MCP-Backed Systems
+**Engineering policy (global)**
+1. Global vs Project Configuration *(new: explains the two-file layering model)*
+2. Safe Implementation Policy
+3. Testing Expectations *(principles only; tooling in project file)*
+4. Type Checking Policy *(language-agnostic principles; tool in project file)*
+5. Linting and Formatting Policy *(principles only; tool in project file)*
+6. Commit Policy
+7. Pull Request Policy
+8. CI/CD Triage Expectations
+9. MCP-Backed Systems
 
-**Workflow gates and automation policy**
-13. Auto-Merge Policy
-14. Bot PR Policy
-15. Push Gate Policy
-16. Development Preconditions
-17. Release Operations Policy
-18. Time-Layer Design (skill-first polling and scheduling)
+**Workflow gates and automation policy (global)**
+10. Auto-Merge Policy
+11. Bot PR Policy
+12. Push Gate Policy
+13. Development Preconditions
+14. Release Operations Policy
+15. Time-Layer Design (skill-first polling and scheduling)
+
+**Skill, agent, and state coordination (global)**
+16. Environment Variable Reference
+17. Agent Delegation Model
+18. Skill Invocation Guide
 19. Workflow State Management
 20. Circuit Breaker Policy
+21. What Claude Code Must Never Do
 
-**Skill and agent coordination**
-21. Agent Delegation Model
-22. Skill Invocation Guide and Hard Limits
+**Project-level `.claude/CLAUDE.md` sections (per-repo)**
+- Repository Identity
+- Architecture Constraints
+- Package and Build Commands
+- Testing Tooling
+- Type Checker and Linter Tooling
+- Source-of-Truth Systems
+- Merge Strategy
+- Polling Intervals
+- Language-Specific Repair Skills
 
 ### Role Layer (.claude/agents/)
 
@@ -310,15 +393,19 @@ Seven hooks wired across two trigger points (circuit-breaker removed from PostTo
 
 ### MCP Capability Map (.mcp.json)
 
-| Server | Capabilities | Default State | Notes |
-|--------|-------------|---------------|-------|
-| `github` | `code_repository`, `issue_tracking` | **Active** | Core: always enabled |
-| `fetch` | `fetch` | **Active** | Utility: URL fetching |
-| `sonarqube` | `static_analysis` | **Active** | First-class quality gate; run before every PR merge |
-| `clickup` | `issue_tracking` | Disabled | Enable with `CLICKUP_API_TOKEN`; uses `chisanan232/clickup-mcp-server` |
-| `slack` | `communication` | Disabled | Enable with `SLACK_BOT_TOKEN`; uses `chisanan232/slack-mcp-server` |
-| `codecov` | `coverage_reporting` | Disabled | Optional; enable when coverage trend tracking is needed |
-| `datadog` | `observability` | Disabled | Optional; enable for incident and log triage |
+Servers are tiered: **always-active** apply to all projects; **project-opt-in** are
+disabled by default and enabled per-project by providing credentials.
+
+| Server | Capabilities | Tier | Notes |
+|--------|-------------|------|-------|
+| `fetch` | `fetch` | always-active | Utility: URL fetching |
+| `github` | `code_repository`, `issue_tracking` | always-active | Primary when `CLAUDE_ISSUE_TRACKER=github` |
+| `sonarqube` | `static_analysis` | project-opt-in | Quality gate; enable with `SONAR_TOKEN` + `SONAR_HOST_URL` |
+| `clickup` | `issue_tracking` | project-opt-in | Enable when `CLAUDE_ISSUE_TRACKER=clickup`; uses `chisanan232/clickup-mcp-server` |
+| `slack` | `communication` | project-opt-in | Enable with `SLACK_BOT_TOKEN`; uses `chisanan232/slack-mcp-server` |
+| `codecov` | `coverage_reporting` | project-opt-in | Enable when coverage trend tracking is needed |
+| `playwright` | `browser_automation` | project-opt-in | Enable for web UI projects; used by `qa-agent` for acceptance testing |
+| `datadog` | `observability` | project-opt-in | Enable for incident and log triage |
 
 ---
 

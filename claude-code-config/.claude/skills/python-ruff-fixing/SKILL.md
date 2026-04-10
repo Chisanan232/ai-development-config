@@ -1,5 +1,9 @@
 # SKILL.md — python-ruff-fixing
 
+> **Language**: Python. This skill is specific to the ruff linter/formatter.
+> For other languages, create an equivalent skill following the naming convention
+> `<language>-<tool>-fixing` (e.g., `typescript-eslint-fixing`, `go-golangci-fixing`, `rust-clippy-repair`).
+
 ## Purpose
 Fix ruff lint violations correctly and consistently.
 
