@@ -345,16 +345,22 @@ slash command or by asking Claude Code to run the named procedure.
 
 | Skill | Type | When to use |
 |---|---|---|
-| `feature-implementation` | Auto | When implementing any new feature |
+| `ticket-intake` | Auto | When a new ticket arrives — before decomposition |
+| `task-decomposition` | Auto | After ticket-intake marks a ticket Accepted |
+| `ticket-pickup-check` | Auto | Before dev-agent begins any implementation task |
+| `dev-impl-loop` | Auto | Drives the full implement→test→QA→PR cycle |
+| `feature-implementation` | Auto | Within dev-impl-loop: when implementing a feature |
 | `test-design` | Auto | When designing tests for new or changed code |
 | `code-review-prep` | Auto | Before opening a PR |
 | `ci-failure-triage` | Auto | When CI is red |
 | `python-mypy-debugging` | Auto | When mypy reports type errors |
 | `python-ruff-fixing` | Auto | When ruff reports lint violations |
 | `python-precommit-repair` | Auto | When pre-commit hooks fail |
-| `task-decomposition` | Auto | When a ticket arrives and needs decomposition |
 | `acceptance-validation` | Auto | Before declaring implementation complete (qa-agent) |
 | `bot-pr-maintainer` | Auto | When a bot PR is classified as clean or conflicted |
+| `pr-feedback-response` | Auto | When a PR has new review comments or Request Changes |
+| `post-merge-close` | Auto | After a PR is merged — close ticket, delete branch |
+| `/workflow-resume` | Command | Resume an interrupted agent session for a ticket |
 | `/pr-readiness` | Command | Before opening a PR (full checklist run) |
 | `/pr-health-check` | Command | At each polling interval to assess all open PRs |
 | `/release-readiness` | Command | Before tagging a release |
@@ -534,6 +540,95 @@ Each agent has a defined scope. Do not conflate responsibilities across agents.
 - **`dev-agent`**: when implementation, test writing, or focused CI repair is needed.
 - **`qa-agent`**: when acceptance criteria must be verified, before a PR is merged.
 - **`release-agent`**: when a release window opens or the release pipeline needs monitoring.
+
+---
+
+## Workflow State Management
+
+Claude Code persists workflow progress for each ticket so interrupted sessions
+can be resumed without restarting from zero.
+
+### How it works
+
+- Skills write state at each phase transition using the `workflow-state.sh` utility:
+  ```bash
+  bash ~/.claude/hooks/workflow-state.sh write <ticket> <workflow> <step> <total> <status>
+  ```
+- State is stored as JSON in `~/.claude/workflow-state/<ticket>.json`.
+- When a session is interrupted, run `/workflow-resume <ticket>` to continue
+  from the last recorded phase without re-running completed work.
+- After a ticket is fully complete, state is archived:
+  ```bash
+  bash ~/.claude/hooks/workflow-state.sh archive <ticket>
+  ```
+
+### State file fields
+
+| Field | Purpose |
+|---|---|
+| `ticket` | Ticket reference (e.g., `PROJ-123`) |
+| `workflow` | Skill name currently executing (e.g., `dev-impl-loop`) |
+| `step` | Current step number within the skill |
+| `total_steps` | Total steps in the skill |
+| `status` | `in_progress`, `awaiting_review`, `complete`, `circuit_open` |
+| `timestamp` | ISO 8601 UTC time of last write |
+
+### What workflow state does not replace
+
+- State tracks **which phase** was reached, not the content of changes made.
+- Git history is the authoritative record of what code was committed.
+- The audit log (`~/.claude/hooks/audit_log.sh`) records what commands ran.
+- Use `git log` and the audit log to understand *what* happened; use the state
+  file only to determine *where to resume*.
+
+---
+
+## Circuit Breaker Policy
+
+Claude Code uses a circuit breaker to prevent runaway repair loops. When the
+same ticket accumulates too many consecutive failures, the circuit opens and
+all further attempts are blocked until an engineer intervenes.
+
+### States
+
+| State | Meaning |
+|---|---|
+| **Closed** | Normal operation — failures recorded but below threshold |
+| **Open** | Threshold exceeded — further attempts blocked |
+| **Reset** | Manually cleared by engineer — returns to Closed |
+
+### Thresholds (per skill)
+
+| Skill / Phase | Threshold |
+|---|---|
+| `dev-impl-loop` Phase 1 (relative tests) | 5 consecutive failures |
+| `dev-impl-loop` Phase 2 (full suite repair) | 3 consecutive failures |
+| `dev-impl-loop` Phase 5 (post-QA repair cycles) | 3 QA rejection cycles |
+
+### How to use
+
+Skills call the utility directly:
+```bash
+# Check before entering a loop
+bash ~/.claude/hooks/circuit-breaker-gate.sh check <ticket> [threshold]
+
+# Record a failure after each failed iteration
+bash ~/.claude/hooks/circuit-breaker-gate.sh record-failure <ticket> [threshold]
+
+# Record a success (resets consecutive failure count)
+bash ~/.claude/hooks/circuit-breaker-gate.sh record-success <ticket>
+
+# Manual reset after engineer review
+bash ~/.claude/hooks/circuit-breaker-gate.sh reset <ticket>
+```
+
+### When the circuit opens
+
+1. Stop the repair loop immediately.
+2. Write workflow state as `circuit_open`.
+3. Report to `dev-lead-agent` with the failure summary and the ticket reference.
+4. Do not attempt further repairs until the engineer reviews the situation
+   and resets the breaker.
 
 ---
 
