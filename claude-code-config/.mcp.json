@@ -61,6 +61,20 @@
       "capabilities": ["communication"],
       "disabled": true
     },
+    "clickup": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "CLICKUP_API_TOKEN",
+        "ghcr.io/chisanan232/clickup-mcp-server:latest"
+      ],
+      "env": {
+        "CLICKUP_API_TOKEN": "${CLICKUP_API_TOKEN}"
+      },
+      "_note": "[VERIFY IMAGE README] Confirm required env vars and runtime args at https://github.com/chisanan232/clickup-mcp-server before enabling",
+      "capabilities": ["issue_tracking"],
+      "disabled": true
+    },
     "datadog": {
       "command": "docker",
       "args": [
