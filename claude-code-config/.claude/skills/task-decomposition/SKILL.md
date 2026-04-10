@@ -38,11 +38,27 @@ Auto-used. `dev-lead-agent` invokes this skill when a new ticket or task arrives
     - Which agent should execute it (`dev-agent`, `qa-agent`, or direct action)
     - Whether it can be parallelized with any other step
 
-### Phase 4 — Output
+### Phase 4 — Create sub-tickets and output
 12. Produce the decomposition as a numbered task list.
 13. Mark each task with its assigned agent.
 14. Identify the critical path (the minimum sequence required to reach a shippable state).
-15. Post the decomposition as a comment on the ticket if issue-tracking MCP is available.
+15. **Create discrete child/sub-tickets in the issue tracker** for each parallelizable
+    task unit (not just a comment — actual trackable tickets):
+    a. For each task in the breakdown, create a child ticket:
+       - Title: `[parent-ref] [short task description]`
+       - Description: the full task detail from step 11.
+       - Acceptance criteria: the subtask-specific criteria.
+       - State: "Accepted" (ready for dev-agent pickup immediately).
+       - Link to parent ticket.
+       - Label/tag: the assigned agent role (e.g., "dev-agent", "qa-agent").
+    b. For tasks that can run in parallel, create all of them at once so
+       multiple dev-agent instances can pick them up independently.
+    c. For tasks that have dependencies, set the "blocked by" field to the
+       parent sub-ticket they depend on.
+16. Post a summary comment on the parent ticket:
+    - List all created sub-tickets with their references and states.
+    - Show the dependency chain and which tasks can start immediately.
+17. Transition the parent ticket state to "In Decomposition" or "In Progress".
 
 ## Output format
 
@@ -53,17 +69,18 @@ Auto-used. `dev-lead-agent` invokes this skill when a new ticket or task arrives
 - [ ] [criterion 1]
 - [ ] [criterion 2]
 
-### Tasks
-1. [dev-agent] [task description] — depends on: none
-2. [dev-agent] [task description] — depends on: 1
-3. [qa-agent] [validate behavior X] — depends on: 2
-4. [dev-lead-agent] [PR review and merge decision] — depends on: 3
+### Sub-tickets created
+1. [sub-ticket ref] [dev-agent] [task description] — depends on: none — state: Accepted
+2. [sub-ticket ref] [dev-agent] [task description] — depends on: 1 — state: Blocked
+3. [sub-ticket ref] [qa-agent] [validate behavior X] — depends on: 2 — state: Blocked
+4. [sub-ticket ref] [dev-lead-agent] [PR review and merge] — depends on: 3 — state: Blocked
 
 ### Critical path
-1 → 2 → 3 → 4
+[sub-1] → [sub-2] → [sub-3] → [sub-4]
 
-### Parallelizable
-Tasks [X] and [Y] can run concurrently after task [Z] completes.
+### Can start immediately (no blockers)
+- [sub-ticket ref]: [task description] — assign to dev-agent
+- [sub-ticket ref]: [task description] — assign to dev-agent (parallel)
 ```
 
 ## Safe-Fix Guidance

@@ -10,18 +10,33 @@ implementation code or execute focused repairs directly.
 
 ## Responsibilities
 
-### Task intake and decomposition
-- Read the ticket or requirement and restate it in concrete engineering terms.
+### Ticket intake and requirement discussion
+- Invoke `ticket-intake` skill when a new ticket arrives or at the start of a sprint.
+- Facilitate requirement discussion: post clarifying questions on the ticket, wait
+  for responses, document conclusions and reference links back into the ticket.
+- Do not proceed to decomposition while blocking questions are open.
+
+### Task decomposition and sub-ticket creation
+- After `ticket-intake` marks a ticket "Accepted", invoke `task-decomposition`.
+- Restate the requirement in concrete engineering terms.
 - Identify dependencies and blocking relationships between sub-tasks.
 - Break the work into an ordered list of discrete implementation steps.
-- Assign each step to the appropriate agent (`dev-agent`, `qa-agent`).
-- Update ticket state in the issue-tracking system when decomposition is complete.
+- **Create actual child/sub-tickets** in the issue tracker for each parallelizable
+  task unit (not just a comment). Set each to "Accepted" so `dev-agent` can pick
+  them up immediately.
+- Assign each sub-ticket to the appropriate agent (`dev-agent`, `qa-agent`).
+- Update parent ticket state when decomposition is complete.
 
 ### PR review and merge decisions
 - Review open PRs on the current branch or repository.
 - Check: scope matches the ticket, tests are present, CI is green, no stray changes.
+- Leave structured inline review comments for each issue found:
+  - Mark comments as Must-fix, Should-fix, Discuss, or Acknowledge.
+  - State the reason and suggest the fix where possible.
 - Approve a PR only when it meets all criteria in the `Auto-Merge Policy` in CLAUDE.md.
 - Decline or request changes when criteria are not met — state the reason explicitly.
+- After merge: invoke `post-merge-close` to close the ticket, delete the branch,
+  and notify the reporter.
 - Close stale PRs (no activity for [PROJECT-SPECIFIC] days after last review).
 
 ### Bot PR coordination
@@ -42,10 +57,12 @@ implementation code or execute focused repairs directly.
 - SonarQube MCP (`static_analysis`) — for pre-merge quality gate checks
 
 ## Skills used
+- `ticket-intake`
 - `task-decomposition`
 - `pr-health-check`
 - `bot-pr-maintainer`
 - `code-review-prep`
+- `post-merge-close`
 
 ## What this agent must not do
 - Write implementation code — delegate to `dev-agent`.

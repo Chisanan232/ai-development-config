@@ -508,12 +508,158 @@ Teams should use one, not both, for issue tracking. The guidance:
 
 ---
 
-## 7. Further Reading
+## 7. Workflow Gap Closure — What Was Added and Why
+
+The initial Claude Code kit covered implementation and PR mechanics but left
+ten gaps in the full ticket lifecycle. This section documents each gap,
+what closed it, and the design concern it addresses.
+
+### Gap map
+
+| Gap | Gap description | What closes it | Design concern |
+|---|---|---|---|
+| G1 | No ticket intake or requirement discussion | `ticket-intake` skill | Prevents decomposing ambiguous tickets |
+| G2 | `task-decomposition` created comments, not real sub-tickets | `task-decomposition` Phase 4 rewrite | Ensures parallel dev-agents can pick up sub-tasks independently |
+| G3 | No pre-implementation ticket validation | `ticket-pickup-check` skill | Prevents duplicate assignment and blocked-ticket churn |
+| G4 | No structured implementation driver with phases | `dev-impl-loop` skill | Gives every ticket a defined entry point, exit condition, and handoff |
+| G5 | No explicit QA handoff trigger | Phase 4 of `dev-impl-loop` | Ensures qa-agent runs before every PR is opened |
+| G6 | No PR review feedback handling | `pr-feedback-response` skill | Closes the reviewer feedback loop systematically |
+| G7 | No post-merge close-out | `post-merge-close` skill | Leaves no dangling branches or open tickets after merge |
+| G8 | No browser/UI testing path in qa-agent | `qa-agent` updated | E2E coverage for frontend and full-stack tickets |
+| G9 | No workflow state persistence for session resumption | `workflow-state.sh` utility + `workflow-resume` skill | Interrupted sessions resume at the correct phase, not from zero |
+| G10 | No circuit breaker for implementation loops | `circuit-breaker-gate.sh` hook + CLAUDE.md policy | Prevents runaway self-repair cycles from consuming unlimited resources |
+
+### Design concern: phase-driven ticket lifecycle
+
+Before the gap closure, the system had agents and skills but no explicit
+**lifecycle scaffold** that connected them. A dev-agent could implement
+without ever validating, and a qa-agent could be skipped if the dev-agent
+went directly to PR creation. The `dev-impl-loop` skill closes this by
+making the lifecycle explicit:
+
+```
+ticket-pickup-check
+        │
+        ▼
+dev-impl-loop Phase 0: env verify
+        │
+        ▼
+Phase 1: ralph loop (implement → relative tests) ──── circuit breaker (threshold: 5)
+        │ all acceptance criteria green
+        ▼
+Phase 2: full test suite ────────────────────────── circuit breaker (threshold: 3)
+        │ all green
+        ▼
+Phase 3: pre-commit --all-files
+        │ pass
+        ▼
+Phase 4: explicit QA handoff signal → qa-agent acceptance-validation
+        │ verdict: ready
+        ▼
+Phase 5: open PR via code-review-prep + pr-readiness
+        │ merged
+        ▼
+post-merge-close: ticket → Done, branch deleted, reporter notified
+```
+
+This is not a flowchart — it is a **contract**. Each phase has a defined
+entry condition and exit condition. No phase is optional. If any phase
+fails to exit cleanly, the circuit breaker records it.
+
+### Design concern: the difference between the audit log and workflow state
+
+The existing `audit_log.sh` records **what commands ran and when**. It is
+an append-only JSONL trail. It cannot answer "which phase of the ticket was
+I in when the session crashed?"
+
+`workflow-state.sh` answers a different question: **where was the skill
+in its phase sequence at the last checkpoint?** The two systems are
+complementary, not redundant:
+
+| System | Records | Purpose |
+|---|---|---|
+| `audit_log.sh` | Every Bash command run | Security audit, debugging |
+| `workflow-state.sh` | Phase transitions per ticket | Session resumption |
+| Git log | Every commit with message | Code history |
+
+---
+
+## 8. Circuit Breaker Design
+
+### Why a circuit breaker?
+
+The ralph loop (`/ralph-loop`) is iterative by design — it runs until tests
+pass. Without an external stopping condition, a session with a genuinely broken
+test environment or an impossible-to-fix bug will iterate forever, consuming
+context and tokens while making no progress.
+
+The circuit breaker applies the same pattern used in distributed systems:
+track consecutive failures; when they exceed a threshold, stop the caller
+from making further attempts until an operator reviews the situation.
+
+### States and transitions
+
+```
+              ┌─────────────────────────────────────────┐
+              │                                         │
+        failure                                   engineer reset
+              │                                         │
+              ▼                                         │
+    ┌─────────────────┐   N failures   ┌─────────────────────────┐
+    │                 │   ──────────►  │                         │
+    │    CLOSED       │                │      OPEN               │
+    │  (normal ops)   │                │  (attempts blocked)     │
+    │                 │   ◄────────    │                         │
+    └─────────────────┘   engineer     └─────────────────────────┘
+              │           reset
+          success
+              │
+         (reset count
+          to zero,
+          stay CLOSED)
+```
+
+### Threshold rationale
+
+| Phase | Threshold | Reason |
+|---|---|---|
+| Phase 1 (relative tests) | 5 | More attempts allowed because test failures here are often shallow; gives room to iterate |
+| Phase 2 (full suite) | 3 | Full suite failures are more likely to indicate a systemic problem; fewer attempts before escalation |
+| Phase 5 (QA rejection) | 3 | Multiple QA rejections indicate scope or design misunderstanding; human judgment needed |
+
+### Design concern: the hook vs. the skill
+
+`circuit-breaker-gate.sh` operates as both a **PostToolUse[Bash] hook**
+(passive, detecting failure markers in command output) and a **utility
+script** (called explicitly by skills at phase boundaries).
+
+The hook mode is best-effort: it reads output and tries to identify the
+active ticket context. The utility mode is authoritative: skills call
+`record-failure` and `record-success` explicitly at known phase checkpoints.
+
+Both work together. The hook provides a safety net for commands run outside
+a skill context; the utility provides precise tracking within a skill context.
+
+### Design concern: what the circuit breaker does not do
+
+The circuit breaker is a **stopping mechanism**, not a repair mechanism.
+It does not:
+- Analyze why failures are happening.
+- Suggest fixes.
+- Reset itself automatically after a cooling-off period.
+
+This is intentional. Auto-reset after cooling off would re-enter the same
+failing loop; the problem must be understood before re-attempting. Only an
+engineer, after reviewing the failure summary, should reset the breaker.
+
+---
+
+## 9. Further Reading
 
 | Document | What it covers |
 |---|---|
 | `CONFIGURATION-OVERVIEW.md` | Full directory structure, hook wiring, MCP map |
-| `claude-code-config/CLAUDE.md` | All 20 policy sections — the durable constitution |
+| `claude-code-config/CLAUDE.md` | All 22 policy sections — the durable constitution |
 | `claude-code-config/.claude/agents/dev-lead-agent.md` | Full dev-lead-agent responsibilities |
 | `claude-code-config/.claude/agents/dev-agent.md` | Full dev-agent responsibilities |
 | `claude-code-config/.claude/agents/qa-agent.md` | Full qa-agent responsibilities |
