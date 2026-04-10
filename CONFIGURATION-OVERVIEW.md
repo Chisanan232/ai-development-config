@@ -188,6 +188,51 @@ The Claude Code kit includes a four-agent role model for complex multi-step task
 - `qa-agent` validates from outside; it does not write fixes.
 - `release-agent` observes; it does not trigger releases or merge PRs.
 
+**Agent delegation flow:**
+
+```mermaid
+graph TD
+    E["👤 Engineer / Ticket"]
+    DL["dev-lead-agent\n(orchestration)"]
+    D["dev-agent\n(implementation)"]
+    QA["qa-agent\n(validation)"]
+    R["release-agent\n(observation)"]
+
+    TD["task-decomposition"]
+    PHC["pr-health-check"]
+    BPM["bot-pr-maintainer"]
+    FI["feature-implementation"]
+    TST["test-design"]
+    CI["ci-failure-triage"]
+    AV["acceptance-validation"]
+    RP["release-preparation"]
+    RW["release-watch"]
+
+    E -->|"ticket arrives"| DL
+    DL -->|"decompose"| TD
+    DL -->|"delegate impl"| D
+    DL -->|"delegate QA"| QA
+    DL -->|"open release window"| R
+    DL -->|"poll PRs"| PHC
+    PHC -->|"bot PR found"| BPM
+
+    D --> FI
+    D --> TST
+    D --> CI
+
+    QA --> AV
+
+    R --> RP
+    R --> RW
+
+    BPM -->|"clean: merge"| DL
+    BPM -->|"conflict: rebase\nthen re-poll"| PHC
+    BPM -->|"CI broken by update"| DL
+
+    AV -->|"verdict: ready"| DL
+    AV -->|"verdict: blocked"| D
+```
+
 ### Hook Wiring (settings.json)
 
 Seven hooks wired across two trigger points:
