@@ -90,6 +90,42 @@ Claude Code must follow these rules on every implementation task, without except
 
 ---
 
+## When to Use the Full Workflow vs. the Quick-Fix Path
+
+The ticket-driven workflow (`ticket-intake → dev-impl-loop → QA handoff → PR`) is
+the right contract for substantive feature work. It is overkill for small changes.
+Use judgment to choose the right path.
+
+### Quick-fix path (no ticket required)
+
+Use for: single-file bugfixes, documentation updates, configuration tweaks,
+personal/exploratory projects with no issue tracker, data science notebooks.
+
+1. Read the relevant code.
+2. Make the minimal change.
+3. Run impacted tests only — no full suite required for trivial changes.
+4. Commit with a clear message.
+5. Push directly if all checks pass.
+
+No ticket, no QA handoff, no circuit breaker, no workflow state file needed.
+Claude Code acts directly per Rule 5 of the Agent Delegation Model.
+
+### Full workflow path (ticket required)
+
+Use for: new features, significant refactors, bug fixes with regression risk,
+any change that touches multiple files or modules, work that requires QA sign-off.
+
+Follow `dev-impl-loop` (5 phases): implement → relative tests → full suite →
+pre-commit → QA handoff → PR. See the Skill Invocation Guide.
+
+### Decision rule
+
+> If you can describe the complete change in one sentence and it touches fewer
+> than three files, use the quick-fix path.
+> Otherwise, use the full workflow.
+
+---
+
 ## Testing Expectations
 
 - All new features require tests. All bug fixes require a regression test.
@@ -329,6 +365,7 @@ asking Claude Code to run the named procedure.
 | `bot-pr-maintainer` | Auto | When a bot PR is classified as clean or conflicted |
 | `pr-feedback-response` | Auto | When a PR has new review comments or Request Changes |
 | `post-merge-close` | Auto | After a PR is merged — close ticket, delete branch |
+| `/project-setup` | Command | Onboard a new repo — scaffold `.claude/CLAUDE.md`, gitignore, verify hooks |
 | `/workflow-resume` | Command | Resume an interrupted agent session for a ticket |
 | `/pr-readiness` | Command | Before opening a PR (full checklist run) |
 | `/pr-health-check` | Command | At each polling interval to assess all open PRs |
@@ -508,6 +545,7 @@ and uncomment the variables you want to override.
 | `CLAUDE_E2E_COMMAND` | _(unset)_ | Command to run E2E tests (e.g., `npx playwright test`) |
 | `CLAUDE_SKIP_AUDIT` | `0` | Set to `1` to disable command audit logging |
 | `CLAUDE_STALE_PR_DAYS` | `14` | Days of inactivity before a PR is considered stale |
+| `CLAUDE_SKIP_TEST_GATE` | `0` | Set to `1` to disable the full-test-gate push gate globally |
 
 ---
 
