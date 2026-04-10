@@ -15,17 +15,33 @@ Auto-used. Invoked by `dev-agent` immediately after `ticket-pickup-check` passes
 - Do not assume a passing full suite means pre-commit will pass.
 - Do not assume implementation is done until QA verdict is "ready".
 
+## Ticket context
+Resolve the active ticket reference at the start of every phase:
+```bash
+TICKET="${CLAUDE_CURRENT_TICKET:-$(cat .claude/.current-ticket 2>/dev/null || echo '')}"
+```
+If empty, stop and ask the engineer to run `ticket-pickup-check` first.
+
 ## Steps
 
 ### Phase 0 — Environment verification (before the loop starts)
-1. Confirm the circuit breaker for this ticket is in "closed" state
-   (enforced automatically by `circuit-breaker-gate.sh`).
+1. Confirm the circuit breaker for this ticket is in "closed" state:
+   ```bash
+   bash ~/.claude/hooks/circuit-breaker-gate.sh check "$TICKET"
+   ```
 2. Run `git fetch origin && git pull --rebase` on the working branch.
 3. Confirm working directory is clean (no stale changes from a previous session).
 4. Update workflow state: step 1 of 5.
    ```bash
    bash ~/.claude/hooks/workflow-state.sh write \
-     "[ticket-ref]" "dev-impl-loop" "1" "5" "in_progress"
+     "$TICKET" "dev-impl-loop" "1" "5" "in_progress"
+   ```
+   Record the decision:
+   ```bash
+   bash ~/.claude/hooks/decision-log.sh record \
+     --ticket "$TICKET" --agent "dev-agent" --skill "dev-impl-loop" \
+     --phase "0" --decision "proceed" \
+     --reason "Circuit closed, branch current, working tree clean"
    ```
 
 ### Phase 1 — Implementation ralph loop (relative tests)
@@ -41,8 +57,15 @@ Auto-used. Invoked by `dev-agent` immediately after `ticket-pickup-check` passes
       - Analyze the root cause (do not guess — read the failure output).
       - Apply the minimal fix.
       - Re-run relative tests. Repeat from (b).
-      - The circuit breaker counts each consecutive failure; if it trips,
-        stop the loop and escalate to `dev-lead-agent`.
+      - Record the failure and check the circuit breaker:
+        ```bash
+        bash ~/.claude/hooks/circuit-breaker-gate.sh record-failure "$TICKET" 5
+        ```
+        If the circuit opens, stop and escalate to `dev-lead-agent`.
+   e. If relative tests pass after a fix:
+      ```bash
+      bash ~/.claude/hooks/circuit-breaker-gate.sh record-success "$TICKET"
+      ```
 7. Continue iterations until all ticket acceptance criteria are implemented
    and relative tests are green.
 8. Stop `/ralph-loop`. Do not proceed until the loop exits cleanly.
@@ -52,27 +75,55 @@ Auto-used. Invoked by `dev-agent` immediately after `ticket-pickup-check` passes
    Update workflow state: step 2 of 5.
    ```bash
    bash ~/.claude/hooks/workflow-state.sh write \
-     "[ticket-ref]" "dev-impl-loop" "2" "5" "in_progress"
+     "$TICKET" "dev-impl-loop" "2" "5" "in_progress"
    ```
 10. If any test fails:
     a. Determine: is the failure in code I changed, or pre-existing?
     b. Pre-existing failure → document it, report to `dev-lead-agent`, do not fix.
-    c. Failure in changed code → one ralph loop iteration to fix
-       (circuit breaker applies — do not iterate without limit).
+       ```bash
+       bash ~/.claude/hooks/decision-log.sh record \
+         --ticket "$TICKET" --agent "dev-agent" --skill "dev-impl-loop" \
+         --phase "2" --decision "escalate" \
+         --reason "Pre-existing test failure — not caused by this change" \
+         --context "[test name and failure output]"
+       ```
+    c. Failure in changed code → one ralph loop iteration to fix.
+       Record failure and check circuit breaker:
+       ```bash
+       bash ~/.claude/hooks/circuit-breaker-gate.sh record-failure "$TICKET" 3
+       ```
+       On success: `bash ~/.claude/hooks/circuit-breaker-gate.sh record-success "$TICKET"`
 11. All tests must pass before proceeding to Phase 3.
+    Record decision:
+    ```bash
+    bash ~/.claude/hooks/decision-log.sh record \
+      --ticket "$TICKET" --agent "dev-agent" --skill "dev-impl-loop" \
+      --phase "2" --decision "proceed" \
+      --reason "Full test suite green" --context "[N passed, 0 failed]"
+    ```
 
 ### Phase 3 — Pre-commit checks
 12. Run `pre-commit run --all-files`.
     Update workflow state: step 3 of 5.
     ```bash
     bash ~/.claude/hooks/workflow-state.sh write \
-      "[ticket-ref]" "dev-impl-loop" "3" "5" "in_progress"
+      "$TICKET" "dev-impl-loop" "3" "5" "in_progress"
     ```
 13. If any check fails: use `python-precommit-repair` or `python-ruff-fixing`
     skill. Re-run after repair. Do not use `--no-verify`.
-14. When all checks pass: write the test sentinel.
+14. When all checks pass: write the test sentinel (scoped to this repo+branch).
     ```bash
-    touch ~/.claude/hooks/.last-test-pass
+    SENTINEL_BASE="${CLAUDE_SENTINEL_DIR:-${HOME}/.claude/sentinels}"
+    REPO_KEY=$(git remote get-url origin 2>/dev/null | shasum -a 256 | cut -c1-12)
+    BRANCH=$(git branch --show-current | tr '/' '_')
+    touch "${SENTINEL_BASE}/${REPO_KEY}/${BRANCH}/.last-test-pass"
+    ```
+    Record decision:
+    ```bash
+    bash ~/.claude/hooks/decision-log.sh record \
+      --ticket "$TICKET" --agent "dev-agent" --skill "dev-impl-loop" \
+      --phase "3" --decision "proceed" \
+      --reason "Pre-commit clean; sentinel updated"
     ```
 
 ### Phase 4 — QA handoff (explicit trigger)
@@ -80,7 +131,14 @@ Auto-used. Invoked by `dev-agent` immediately after `ticket-pickup-check` passes
     Update workflow state: step 4 of 5.
     ```bash
     bash ~/.claude/hooks/workflow-state.sh write \
-      "[ticket-ref]" "dev-impl-loop" "4" "5" "in_progress"
+      "$TICKET" "dev-impl-loop" "4" "5" "in_progress"
+    ```
+    Record decision:
+    ```bash
+    bash ~/.claude/hooks/decision-log.sh record \
+      --ticket "$TICKET" --agent "dev-agent" --skill "dev-impl-loop" \
+      --phase "4" --decision "qa-handoff" \
+      --reason "All phases green; signalling qa-agent for acceptance-validation"
     ```
 16. Post a QA handoff comment on the ticket:
     ```
@@ -105,7 +163,11 @@ Auto-used. Invoked by `dev-agent` immediately after `ticket-pickup-check` passes
     a. Update workflow state: step 5 of 5, status "complete".
        ```bash
        bash ~/.claude/hooks/workflow-state.sh write \
-         "[ticket-ref]" "dev-impl-loop" "5" "5" "complete"
+         "$TICKET" "dev-impl-loop" "5" "5" "complete"
+       bash ~/.claude/hooks/decision-log.sh record \
+         --ticket "$TICKET" --agent "dev-agent" --skill "dev-impl-loop" \
+         --phase "5" --decision "open-pr" \
+         --reason "QA verdict: ready" --context "[qa-agent verdict summary]"
        ```
     b. Open a PR using `code-review-prep` and `pr-readiness` skills.
     c. Link the PR to the ticket.
