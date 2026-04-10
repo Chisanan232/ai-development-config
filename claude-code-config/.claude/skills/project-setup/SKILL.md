@@ -21,7 +21,13 @@ explicitly refreshing stale configuration — it will overwrite existing content
 ## Steps
 
 ### Phase 1 — Detect project context
-1. Read the repository root to identify:
+1. Check if `.claude/CLAUDE.md` already exists in the repository root.
+   If it does:
+   - Warn the engineer: "`.claude/CLAUDE.md` already exists. Re-running project-setup
+     will overwrite the existing configuration. Confirm with 'yes, overwrite' to proceed."
+   - Do not proceed to scaffold until the engineer explicitly confirms.
+   - If the engineer does not confirm, exit and suggest `/workflow-resume` instead.
+2. Read the repository root to identify:
    - **Primary language**: check for `pyproject.toml`/`setup.py` (Python),
      `package.json` (Node/TypeScript/JavaScript), `go.mod` (Go),
      `Cargo.toml` (Rust), `pom.xml`/`build.gradle` (Java/Kotlin),
@@ -37,11 +43,11 @@ explicitly refreshing stale configuration — it will overwrite existing content
    - **CI system**: check for `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`.
    - **Issue tracker**: check for `GITHUB_TOKEN` env var or GitHub remote URL →
      default to `github`. Otherwise leave blank for manual fill-in.
-2. Summarize detections to the engineer and ask for confirmation before writing.
+3. Summarize detections to the engineer and ask for confirmation before writing.
 
 ### Phase 2 — Scaffold `.claude/CLAUDE.md`
-3. Create the `.claude/` directory if it does not exist.
-4. Write `.claude/CLAUDE.md` with the following sections pre-filled from detections:
+4. Create the `.claude/` directory if it does not exist.
+5. Write `.claude/CLAUDE.md` with the following sections pre-filled from detections:
 
 ```markdown
 # CLAUDE.md — Project Configuration
@@ -100,36 +106,36 @@ explicitly refreshing stale configuration — it will overwrite existing content
 - [e.g., python-ruff-fixing, typescript-eslint-fixing, go-golangci-fixing]
 ```
 
-5. Open the scaffolded file and ask the engineer to review and fill in the
+6. Open the scaffolded file and ask the engineer to review and fill in the
    bracketed placeholders before proceeding. Do not proceed to Phase 3 while
    `[fill in]` markers remain.
 
 ### Phase 3 — Gitignore and hook verification
-6. Add `.claude/.current-ticket` to `.gitignore` if not already present:
+7. Add `.claude/.current-ticket` to `.gitignore` if not already present:
    ```bash
    grep -q "^\.claude/\.current-ticket" .gitignore 2>/dev/null \
      || echo ".claude/.current-ticket" >> .gitignore
    ```
-7. Verify the hook chain is reachable:
+8. Verify the hook chain is reachable:
    ```bash
    ls -la ~/.claude/hooks/*.sh 2>/dev/null | wc -l
    ```
    If fewer than 5 hook scripts are found, warn: "Global hooks may not be installed.
    Run the global install steps from GETTING-STARTED.md."
-8. Verify hooks are executable:
+9. Verify hooks are executable:
    ```bash
    ls -la ~/.claude/hooks/*.sh | grep -v "^-rwx"
    ```
    If any hooks are not executable, run: `chmod +x ~/.claude/hooks/*.sh`
 
 ### Phase 4 — Confirm and summarise
-9. Report to the engineer:
+10. Report to the engineer:
    - What was detected (language, tools, CI).
    - What was scaffolded.
    - Which `[fill in]` markers still need attention.
    - Whether any language-specific repair skills are missing from `~/.claude/skills/`
      and should be created (reference the Language Repair Skills Guide).
-10. Suggest the next step: fill in the placeholders, then run `/ticket-intake`
+11. Suggest the next step: fill in the placeholders, then run `/ticket-intake`
     or use the quick-fix path depending on the first task.
 
 ## Output
