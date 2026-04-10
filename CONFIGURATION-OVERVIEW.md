@@ -235,6 +235,47 @@ graph TD
 
 ### Hook Wiring (settings.json)
 
+Seven hooks wired across two trigger points. The push gate sequence is the most important to understand:
+
+```
+ Claude Code issues: git push ...
+         │
+         ▼  PreToolUse[Bash] fires — sequential chain
+ ┌───────────────────────────────────────────────────────┐
+ │ 1. block_dangerous_commands.sh                        │
+ │    Pattern match against known destructive commands.  │
+ │    BLOCKED (exit 2) → stop. Command never runs.       │
+ └───────────────────────┬───────────────────────────────┘
+                         │ pass
+ ┌───────────────────────▼───────────────────────────────┐
+ │ 2. freshness-gate.sh                                  │
+ │    git fetch origin; count commits behind upstream.   │
+ │    BLOCKED (exit 2) → run git pull --rebase first.    │
+ └───────────────────────┬───────────────────────────────┘
+                         │ pass
+ ┌───────────────────────▼───────────────────────────────┐
+ │ 3. full-test-gate.sh                                  │
+ │    Check sentinel file age vs. newest source file.    │
+ │    BLOCKED (exit 2) → re-run the full test suite.     │
+ └───────────────────────┬───────────────────────────────┘
+                         │ pass
+ ┌───────────────────────▼───────────────────────────────┐
+ │ 4. precommit-gate.sh                                  │
+ │    Run pre-commit run --all-files.                    │
+ │    BLOCKED (exit 2) → fix violations; use             │
+ │                        python-precommit-repair skill. │
+ └───────────────────────┬───────────────────────────────┘
+                         │ all pass
+         ▼  git push executes
+         │
+         ▼  PostToolUse[Bash] fires
+ ┌───────────────────────────────────────────────────────┐
+ │ 5. audit_log.sh      — log the push to JSONL          │
+ │ 6. completion-contract.sh — scan output for FAILED,   │
+ │    ERROR, etc. Warn if failure markers present.       │
+ └───────────────────────────────────────────────────────┘
+```
+
 Seven hooks wired across two trigger points:
 
 | Trigger | Matcher | Hook | Purpose |
