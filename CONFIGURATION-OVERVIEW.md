@@ -69,8 +69,9 @@ claude-code-config/
 
 ### CLAUDE.md Sections
 
-The `CLAUDE.md` template covers 13 sections:
+The `CLAUDE.md` template covers 20 sections organized in three groups:
 
+**Engineering policy**
 1. Repository Identity
 2. Architecture Constraints
 3. Package and Build Commands
@@ -83,7 +84,35 @@ The `CLAUDE.md` template covers 13 sections:
 10. CI/CD Triage Expectations
 11. Source-of-Truth Systems
 12. MCP-Backed Systems
-13. Skill Invocation Guide and Hard Limits
+
+**Workflow gates and automation policy**
+13. Auto-Merge Policy
+14. Bot PR Policy
+15. Push Gate Policy
+16. Development Preconditions
+17. Release Operations Policy
+18. Time-Layer Design (skill-first polling and scheduling)
+
+**Skill and agent coordination**
+19. Agent Delegation Model
+20. Skill Invocation Guide and Hard Limits
+
+### Role Layer (.claude/agents/)
+
+The Claude Code kit includes a four-agent role model for complex multi-step tasks:
+
+| Agent | File | Scope |
+|-------|------|-------|
+| `dev-lead-agent` | `agents/dev-lead-agent.md` | Orchestration, task decomposition, PR review, merge decisions, bot PR coordination |
+| `dev-agent` | `agents/dev-agent.md` | Implementation, test writing, local validation, focused CI repair |
+| `qa-agent` | `agents/qa-agent.md` | Acceptance validation, adversarial testing, regression checks, pre-merge verdict |
+| `release-agent` | `agents/release-agent.md` | Release note drafting, version config updates, pipeline observation, outcome summary |
+
+**Delegation rules (enforced by CLAUDE.md Agent Delegation Model section):**
+- `dev-lead-agent` orchestrates; it does not write implementation code.
+- `dev-agent` implements; it does not approve or merge PRs.
+- `qa-agent` validates from outside; it does not write fixes.
+- `release-agent` observes; it does not trigger releases or merge PRs.
 
 ### Hook Wiring (settings.json)
 
