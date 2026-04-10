@@ -1,18 +1,49 @@
-# Installing and Using This Windsurf Cascade Configuration Kit
+# Installing and Using This AI Development Configuration Kit
 
 ## Purpose
 
-This repository provides a **generic, production-minded Windsurf Cascade configuration starter kit**.
+This repository provides **generic, production-minded configuration starter kits** for AI-assisted software development.
 
-It is designed to help you structure AI-assisted software development using:
+Two parallel kits are available — choose the one matching your AI tool:
 
-* `AGENTS.md` for project truth and directory-scoped context
-* Rules for short, durable behavioral constraints
-* Skills for reusable multi-step procedures
-* Workflows for manual runbooks
-* Hooks for enforcement, auditing, and lightweight validation
+| Kit | Directory | AI Tool | Config Entry Point |
+|-----|-----------|---------|-------------------|
+| Windsurf Cascade | `.windsurf/` + root `AGENTS.md` | Windsurf Cascade | `AGENTS.md` |
+| Claude Code | `claude-code-config/` | Claude Code (CLI/IDE) | `CLAUDE.md` |
 
-This kit is intentionally **generic-first**. You are expected to refine it for your own repository.
+Both kits share the same engineering philosophy, behavioral standards, and workflow discipline. They are structurally parallel — expressed using each tool's native configuration layers.
+
+Each kit is intentionally **generic-first**. You are expected to refine it for your own repository.
+
+---
+
+## Claude Code Kit
+
+The Claude Code kit lives under `claude-code-config/` and uses Claude Code's native layers:
+
+| Layer | File/Directory | Purpose |
+|-------|---------------|---------|
+| Project Truth | `CLAUDE.md` | 13-section template: identity, architecture, commands, policies |
+| Skills (auto-used) | `.claude/skills/` | Trigger automatically on matching tasks |
+| Skills (command-like) | `.claude/skills/` | Invoked explicitly (`/pr-readiness`, etc.) |
+| Hooks | `.claude/hooks/` + `settings.json` | Shell-based PreToolUse / PostToolUse enforcement |
+| MCP | `.mcp.json` | External capability providers |
+
+**Quick start for Claude Code:**
+
+```bash
+# Copy to your repository
+cp claude-code-config/CLAUDE.md /path/to/your/repo/
+cp -r claude-code-config/.claude /path/to/your/repo/
+cp claude-code-config/settings.json /path/to/your/repo/
+cp claude-code-config/.mcp.json /path/to/your/repo/
+
+# Customize CLAUDE.md — fill in [PROJECT-SPECIFIC] markers
+# Make hooks executable
+chmod +x /path/to/your/repo/.claude/hooks/*.sh
+```
+
+See `claude-code-config/CLAUDE.md` for the full template and `claude-code-config/settings.json` for hook wiring.
 
 ---
 
