@@ -52,14 +52,36 @@ already passed through intake.
 12. Update the ticket description: append a `## Refined Requirements` section
     with the finalized acceptance criteria. Do not delete the original description.
 
+### Phase 3b — Cross-repo scope detection
+13. Before confirming readiness, check whether the ticket requires changes across
+    more than one repository. Look for these signals:
+    - The description mentions two or more repository names or service names.
+    - Acceptance criteria span a backend and a frontend, or an API and a consumer.
+    - Linked issues or dependencies are in different repositories.
+    - Words like "shared library update", "API contract change", "monorepo boundary",
+      or "simultaneous release" appear.
+14. If any signal is present, add a `## Cross-repo scope` section to the conclusion
+    comment:
+    ```
+    ## Cross-repo scope detected
+    Repositories affected: [repo-a], [repo-b]
+    Coordination required: yes — dev-lead-agent will use cross-repo-coordinator
+    ```
+    Tag the ticket with a `cross-repo` label if the tracker supports it.
+    This routes the ticket to `cross-repo-coordinator` in the next phase.
+15. If no cross-repo signal is found, note: "Single-repo scope confirmed."
+
 ### Phase 4 — Readiness confirmation
-13. Confirm all of the following before marking the ticket accepted:
+16. Confirm all of the following before marking the ticket accepted:
     - Acceptance criteria are explicit and testable.
     - Dependencies on other tickets are identified and their states checked.
     - No open blocking questions remain unanswered.
     - Scope is agreed and documented.
-14. Transition the ticket state to "Accepted".
-15. Signal `dev-lead-agent` to invoke `task-decomposition` for this ticket.
+    - Cross-repo scope: detected and labelled, or confirmed single-repo.
+17. Transition the ticket state to "Accepted".
+18. Signal `dev-lead-agent` with the routing decision:
+    - Single-repo: invoke `task-decomposition`.
+    - Cross-repo: invoke `cross-repo-coordinator`.
 
 ## Output format
 
@@ -88,6 +110,10 @@ already passed through intake.
 ### Discussion references
 - [link to Slack thread / document / meeting notes]
 
+### Cross-repo scope
+- Detected: yes → repos: [repo-a], [repo-b] — routing to cross-repo-coordinator
+- Detected: no → single-repo confirmed — routing to task-decomposition
+
 ### Status
 - Questions posted: yes / no
 - Conclusions posted: yes
@@ -99,3 +125,4 @@ already passed through intake.
 - Do not infer acceptance criteria from the ticket title alone.
 - If requirements are contradictory, stop and escalate to the engineer.
 - If the ticket is a duplicate, close it and reference the original.
+- Do not assume single-repo scope — always run the cross-repo detection check.
