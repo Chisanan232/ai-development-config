@@ -35,7 +35,12 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
    ```bash
    bash ~/.claude/hooks/circuit-breaker-gate.sh check "$TICKET"
    ```
-3. Run `git fetch origin && git pull --rebase` on the working branch.
+3. Pull from the branch's configured upstream (not a hardcoded remote name):
+   ```bash
+   UPSTREAM_REMOTE=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null | cut -d'/' -f1)
+   git fetch "${UPSTREAM_REMOTE:-origin}" --quiet
+   git pull --rebase
+   ```
 4. Confirm working directory is clean (no stale changes from a previous session).
 5. Update workflow state: step 1 of 5.
    ```bash

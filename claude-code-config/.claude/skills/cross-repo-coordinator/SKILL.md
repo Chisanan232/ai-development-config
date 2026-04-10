@@ -176,6 +176,34 @@ Integration check: ✅ passed
 Parent ticket: ✅ closed
 ```
 
+## Resuming an interrupted cross-repo-coordinator session
+
+If `cross-repo-coordinator` is interrupted (context limit, crash, manual stop),
+resume using session notes — they are the coordinator-level state store:
+
+```bash
+bash ~/.claude/hooks/session-memory.sh read "[parent-ticket]"
+```
+
+From the notes, determine which phase was active:
+
+| Last note section | Resume action |
+|---|---|
+| "Sub-ticket map" only | Re-enter Phase 2 — re-read sub-ticket states |
+| "Progress snapshot" | Re-enter Phase 2 or 3 — check current PR states vs snapshot |
+| "Integration failure" | Re-enter Phase 4 — re-run integration check after fix |
+| No notes / empty | Re-enter Phase 1 — check if sub-tickets already exist before recreating |
+
+**Do not recreate sub-tickets** if the session notes show a sub-ticket map already
+recorded. Look up the existing sub-tickets by their recorded refs instead.
+
+After determining the resume point, write a new snapshot note before proceeding:
+```bash
+bash ~/.claude/hooks/session-memory.sh append "[parent-ticket]" \
+  "Session resumed ([timestamp])" \
+  "Resuming at Phase [N]. Prior state: [summary from last note]."
+```
+
 ## Safe-Fix Guidance
 - Never merge a per-repo PR before all sub-tickets have cleared QA.
   Partial cross-repo merges create integration debt that is hard to reverse.
@@ -184,3 +212,4 @@ Parent ticket: ✅ closed
 - If integration tests cannot be run (no `CLAUDE_INTEGRATION_TEST_COMMAND`),
   ask the engineer to confirm integration manually before merging.
 - Do not close the parent ticket while any sub-ticket remains open.
+- Do not recreate sub-tickets on resume — check session notes for existing refs first.

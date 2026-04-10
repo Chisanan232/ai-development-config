@@ -32,7 +32,9 @@ and template below.
 | `fixing` | Tool reports violations that can be directly corrected (linters, formatters) |
 | `repair` | Tool blocks a gate and must be cleared before proceeding (pre-commit, build) |
 
-### Provided skills (Python)
+### Provided skills
+
+**Python**
 
 | Skill | Tool | Action |
 |---|---|---|
@@ -40,24 +42,24 @@ and template below.
 | `python-ruff-fixing` | ruff (linter/formatter) | Fix lint violations with auto-fix review |
 | `python-precommit-repair` | pre-commit | Repair hook failures without `--no-verify` |
 
-### Skills to create per language
-
-Create a `SKILL.md` in `~/.claude/skills/<skill-name>/` for each tool in your stack.
-
 **TypeScript / JavaScript**
 
-| Skill to create | Tool | Reference pattern |
+| Skill | Tool | Action |
 |---|---|---|
-| `typescript-tsc-debugging` | tsc (type checker) | Modelled on `python-mypy-debugging` |
-| `typescript-eslint-fixing` | ESLint | Modelled on `python-ruff-fixing` |
-| `node-precommit-repair` | pre-commit (JS hooks) | Modelled on `python-precommit-repair` |
+| `typescript-tsc-debugging` | tsc (type checker) | Diagnose and fix TypeScript type errors |
+| `typescript-eslint-fixing` | ESLint | Fix lint violations (auto-fix first, then manual) |
+| `node-precommit-repair` | pre-commit (JS hooks) | Repair hook failures without `--no-verify` |
 
 **Go**
 
-| Skill to create | Tool | Reference pattern |
+| Skill | Tool | Action |
 |---|---|---|
-| `go-golangci-fixing` | golangci-lint | Modelled on `python-ruff-fixing` |
-| `go-vet-debugging` | go vet | Modelled on `python-mypy-debugging` |
+| `go-vet-debugging` | go vet / go build | Diagnose vet errors and build failures |
+| `go-golangci-fixing` | golangci-lint | Fix lint violations per linter category |
+
+### Skills to create per language
+
+Create a `SKILL.md` in `~/.claude/skills/<skill-name>/` for each tool in your stack.
 
 **Rust**
 
