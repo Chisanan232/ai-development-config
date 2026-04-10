@@ -316,6 +316,31 @@ slash command or by asking Claude Code to run the named procedure.
 
 ---
 
+## Push Gate Policy
+
+Claude Code must not push to any remote branch unless all of the following are true:
+
+1. **Full test suite passes** — run the complete test suite locally, not just impacted tests.
+2. **Pre-commit hooks pass** — run `pre-commit run --all-files`. Zero failures.
+3. **Linter is clean** — zero violations.
+4. **Type checker is clean** — zero errors.
+5. **No uncommitted changes remain** — working tree is clean before pushing.
+6. **Branch is not behind remote** — pull or rebase before pushing to avoid clobbering.
+
+### Force-push rules
+
+- Force-push is **forbidden** on `main` / `master` / release branches under any circumstance.
+- Force-push on feature branches requires **explicit engineer confirmation** and is
+  only permitted when rebasing on the base branch (not to rewrite merged history).
+- Never force-push during an active code review.
+
+### What gates the push
+
+The `full-test-gate.sh` and `precommit-gate.sh` hooks enforce this automatically.
+If either hook fails, the push is blocked. Fix the failure — do not use `--no-verify`.
+
+---
+
 ## Development Preconditions
 
 Before beginning any implementation task, Claude Code must verify:
