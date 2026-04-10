@@ -111,7 +111,7 @@ done
 if [[ "$RED_FOUND" -eq 1 ]]; then
     echo "[HOOK] completion-contract: Test runner failure detected (matched: ${RED_MARKER})" >&2
     echo "[HOOK] Do not proceed — diagnose and fix the failure before the next step." >&2
-    echo "[HOOK] Delegate repair to the appropriate skill (e.g., python-pytest-failure-debugging)." >&2
+    echo "[HOOK] Use the language-appropriate test failure debugging skill (see CLAUDE.md Skill Invocation Guide)." >&2
     exit 2
 fi
 
