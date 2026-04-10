@@ -43,6 +43,7 @@
         "CODECOV_TOKEN": "${CODECOV_TOKEN}"
       },
       "capabilities": ["coverage_reporting"],
+      "_role": "Optional: enable when coverage trend tracking is required for PR merge decisions. Used by qa-agent acceptance-validation and pr-readiness skills.",
       "disabled": true
     },
     "slack": {
