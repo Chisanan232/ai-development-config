@@ -296,6 +296,48 @@ approximation. When it is not available, proceed without it and note the gap.
 
 ---
 
+## Time-Layer Design — Skill-First Polling and Scheduling
+
+Claude Code may run recurring tasks using `/loop` or a scheduler. The rule is:
+**prefer waking narrow skills, not full agents, for polling and status checks.**
+
+### Default rule
+
+- Wake a **skill** for narrow, scoped checks (PR health, bot PR maintenance, pipeline state).
+- Wake **`dev-lead-agent`** only when strategic re-planning or multi-step coordination
+  is needed as a result of what the polling found.
+
+### Primary recurring automation targets
+
+| Target | Skill to wake | Wake agent if |
+|---|---|---|
+| PR health checks | `pr-health-check` | A PR requires merge decision or escalation |
+| Bot PR maintenance | `bot-pr-maintainer` (via `pr-health-check`) | CI failure caused by the update itself |
+| Release pipeline observation | `release-watch` | Pipeline fails and engineer action is needed |
+
+### Polling intervals (project-configurable)
+
+- PR health check: every [PROJECT-SPECIFIC] minutes (e.g., every 30 min during working hours)
+- Release watch: every [PROJECT-SPECIFIC] minutes during an open release window (e.g., every 5 min)
+
+### How to configure
+
+Use `/loop <interval> /pr-health-check` to start a recurring PR health check.
+Use `/loop <interval> /release-preparation` then `/loop <interval> /release-watch`
+during a release window.
+
+Do not start a loop on a full agent (`dev-lead-agent`) for routine polling.
+Agents are stateful and expensive to wake repeatedly — use them only when
+the skill's output indicates a decision or coordination is needed.
+
+### Loop safety rules
+
+- A skill woken by a loop must not trigger another loop.
+- A skill must not enter a self-repair cycle — it must report failure and exit.
+- If a repair action is needed, the skill reports it; the engineer or agent decides.
+
+---
+
 ## Skill Invocation Guide
 
 The following skills are available for this repository. Invoke them by their
