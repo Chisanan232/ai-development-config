@@ -85,6 +85,7 @@ The Claude Code kit lives under `claude-code-config/` and is designed from scrat
 │  precommit-gate               ────────────────                       │
 │                               audit_log                              │
 │                               completion-contract                    │
+│                               circuit-breaker-gate                   │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -108,8 +109,14 @@ claude-code-config/
     │   ├── freshness-gate.sh            # PreToolUse[Bash]: blocks commit/push if branch is behind remote
     │   ├── full-test-gate.sh            # PreToolUse[Bash]: blocks push if tests not re-run after changes
     │   ├── precommit-gate.sh            # PreToolUse[Bash]: runs pre-commit before push, blocks on failure
-    │   └── completion-contract.sh       # PostToolUse[Bash]: warns when failure markers appear before done
+    │   ├── completion-contract.sh       # PostToolUse[Bash]: warns when failure markers appear before done
+    │   ├── workflow-state.sh            # Utility (not a hook): read/write/archive per-ticket phase state
+    │   └── circuit-breaker-gate.sh      # PostToolUse[Bash] + utility: track failures, open circuit at threshold
     └── skills/
+        ├── ticket-intake/SKILL.md               # Auto-used: scan tracker, discuss requirements, mark Accepted
+        ├── task-decomposition/SKILL.md          # Auto-used: ticket → sub-tickets with states and agent assignments
+        ├── ticket-pickup-check/SKILL.md         # Auto-used: state/blocker/assignee gate before implementation
+        ├── dev-impl-loop/SKILL.md               # Auto-used: implement → test → QA handoff → PR (5 phases)
         ├── feature-implementation/SKILL.md      # Auto-used: test-first feature implementation (6 phases)
         ├── test-design/SKILL.md                 # Auto-used: behavior-first test design
         ├── code-review-prep/SKILL.md            # Auto-used: pre-PR quality gate + description generation
@@ -117,9 +124,11 @@ claude-code-config/
         ├── python-mypy-debugging/SKILL.md       # Auto-used: mypy error diagnosis and safe repair
         ├── python-ruff-fixing/SKILL.md          # Auto-used: ruff violation fixing with auto-fix review
         ├── python-precommit-repair/SKILL.md     # Auto-used: pre-commit repair without --no-verify
-        ├── task-decomposition/SKILL.md          # Auto-used: ticket → ordered task list with agent assignments
         ├── acceptance-validation/SKILL.md       # Auto-used: acceptance criteria + adversarial validation
         ├── bot-pr-maintainer/SKILL.md           # Auto-used: clean merge / rebase / escalate for bot PRs
+        ├── pr-feedback-response/SKILL.md        # Auto-used: triage review comments, fix, re-request review
+        ├── post-merge-close/SKILL.md            # Auto-used: close ticket, delete branch, notify reporter
+        ├── workflow-resume/SKILL.md             # Command-like (/workflow-resume): resume interrupted session
         ├── pr-readiness/SKILL.md                # Command-like (/pr-readiness): full PR readiness checklist
         ├── pr-health-check/SKILL.md             # Command-like (/pr-health-check): classify and act on all open PRs
         ├── release-readiness/SKILL.md           # Command-like (/release-readiness): release gate checklist
@@ -147,7 +156,7 @@ claude-code-config/
 
 ### CLAUDE.md Sections
 
-The `CLAUDE.md` template covers 20 sections organized in three groups:
+The `CLAUDE.md` template covers 22 sections organized in three groups:
 
 **Engineering policy**
 1. Repository Identity
@@ -170,10 +179,12 @@ The `CLAUDE.md` template covers 20 sections organized in three groups:
 16. Development Preconditions
 17. Release Operations Policy
 18. Time-Layer Design (skill-first polling and scheduling)
+19. Workflow State Management
+20. Circuit Breaker Policy
 
 **Skill and agent coordination**
-19. Agent Delegation Model
-20. Skill Invocation Guide and Hard Limits
+21. Agent Delegation Model
+22. Skill Invocation Guide and Hard Limits
 
 ### Role Layer (.claude/agents/)
 
@@ -277,10 +288,13 @@ Seven hooks wired across two trigger points. The push gate sequence is the most 
  │ 5. audit_log.sh      — log the push to JSONL          │
  │ 6. completion-contract.sh — scan output for FAILED,   │
  │    ERROR, etc. Warn if failure markers present.       │
+ │ 7. circuit-breaker-gate.sh — detect failure markers,  │
+ │    record against active ticket, open circuit if      │
+ │    consecutive failure threshold is exceeded.         │
  └───────────────────────────────────────────────────────┘
 ```
 
-Seven hooks wired across two trigger points:
+Eight hooks wired across two trigger points:
 
 | Trigger | Matcher | Hook | Purpose |
 |---------|---------|------|---------|
@@ -291,6 +305,7 @@ Seven hooks wired across two trigger points:
 | `PostToolUse` | `Write\|Edit` | `quality_gate.sh` | Debug detection, TODO hygiene, file size checks |
 | `PostToolUse` | `Bash` | `audit_log.sh` | Append-only JSONL audit log with rotation |
 | `PostToolUse` | `Bash` | `completion-contract.sh` | Warn if failure markers appear before task completion |
+| `PostToolUse` | `Bash` | `circuit-breaker-gate.sh` | Track consecutive failures; open circuit at threshold; escalate |
 
 ### MCP Capability Map (.mcp.json)
 
