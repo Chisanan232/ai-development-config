@@ -301,7 +301,108 @@ an unknown test state is genuinely dangerous before a push.
 
 ---
 
-## 5. Further Reading
+## 5. Skill-First Polling Design
+
+### Why skill-first rather than agent-first?
+
+The time layer (recurring automation via `/loop` or scheduler) has a strong default:
+**wake a skill, not a full agent.**
+
+**Reason:** Each agent invocation starts a new context. Agents carry role definitions,
+delegation rules, and reasoning about what to do next. For routine polling work
+(check PR state, check pipeline state), this context overhead is wasted — the
+narrow skill already knows exactly what to do.
+
+| Approach | Context loaded | Actions available | Risk |
+|---|---|---|---|
+| Wake `dev-lead-agent` every 30 min | Full agent: all delegation rules, all skills | Any agent action | May take side actions beyond polling |
+| Wake `/pr-health-check` every 30 min | Narrow skill: PR classification logic only | Classify PRs, act on class | Contained and predictable |
+
+**Rule:** Wake an agent only when the skill's output requires a decision or
+coordination that the skill itself cannot make.
+
+### PR health check polling loop
+
+```mermaid
+graph TD
+    Sched["⏰ /loop 30m"]
+    PHC["/pr-health-check skill"]
+    Merge["approve + merge\n(GitHub MCP)"]
+    BPM["bot-pr-maintainer\nskill"]
+    CIT["ci-failure-triage\nskill (if in scope)"]
+    DL["dev-lead-agent\n(strategic decision needed)"]
+    Wait["wait for next poll\n(no action)"]
+    Escalate["notify engineer\n(Slack MCP)"]
+
+    Sched -->|"every N minutes"| PHC
+
+    PHC -->|"ready-to-merge"| Merge
+    PHC -->|"bot-pr-clean"| BPM
+    PHC -->|"bot-pr-conflict"| BPM
+    PHC -->|"in-progress"| Wait
+    PHC -->|"blocked-ci\n(repair in scope)"| CIT
+    PHC -->|"blocked-ci\n(repair not in scope)"| Escalate
+    PHC -->|"merge decision\nor coordination needed"| DL
+    PHC -->|"stale PR found"| DL
+
+    BPM -->|"Path A: clean → merged"| Merge
+    BPM -->|"Path B: conflict → rebase requested"| Wait
+    BPM -->|"Path C: update broke CI"| DL
+
+    DL -->|"resolved"| PHC
+    DL -->|"unresolvable"| Escalate
+```
+
+### Release window polling loop
+
+During an active release window, a separate loop runs at higher frequency:
+
+```mermaid
+graph LR
+    Sched["⏰ /loop 5m\n(release window only)"]
+    RW["release-watch skill"]
+    Sum["produce success summary\n+ Slack notification"]
+    FR["produce failure report\n+ Slack alert"]
+    Wait["wait for next poll\n(in-progress)"]
+    Eng["escalate to engineer"]
+
+    Sched -->|"every 5 min"| RW
+    RW -->|"all jobs success"| Sum
+    RW -->|"any job failure"| FR
+    RW -->|"in-progress"| Wait
+    FR -->|"transient: recommend re-run"| Eng
+    FR -->|"code/config error"| Eng
+    Wait --> Sched
+```
+
+### Loop safety rules (detailed)
+
+**Rule 1 — No loop spawns another loop.**
+A skill woken by `/loop` must not start a new `/loop`. Only the engineer or a
+top-level agent session may start or extend loops.
+
+**Rule 2 — Skills report; agents decide.**
+When `pr-health-check` finds a merge decision that requires coordination, it
+reports to `dev-lead-agent`. It does not make the merge decision itself.
+
+**Rule 3 — Repair is not a loop action.**
+If a loop-woken skill encounters a repairable failure (e.g., CI is red on a
+human PR), it classifies the failure and notes it in the health report. It does
+not invoke `ci-failure-triage` in a loop. The engineer or `dev-lead-agent` must
+explicitly initiate repair.
+
+**Exception:** Bot PR rebase (Path B in `bot-pr-maintainer`) is permitted as a
+loop action because the bot will perform the rebase independently — the skill
+only posts a comment. There is no risk of an infinite self-repair loop.
+
+**Rule 4 — Loop interval discipline.**
+- PR health check: max once every 15 minutes during working hours.
+- Release watch: max once every 5 minutes during an open release window.
+- Do not start multiple concurrent loops for the same target.
+
+---
+
+## 6. Further Reading
 
 | Document | What it covers |
 |---|---|
