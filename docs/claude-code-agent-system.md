@@ -1,0 +1,522 @@
+# Claude Code Engineering Agent System — Design Reference
+
+This document covers the design rationale, architectural decisions, and known
+trade-offs behind the Claude Code engineering agent system introduced in the
+`claude-code-config/` upgrade. It is a companion to `CONFIGURATION-OVERVIEW.md`.
+
+---
+
+## 1. Design Philosophy
+
+### Why a five-layer model?
+
+The Claude Code kit mirrors the same engineering philosophy as the Windsurf Cascade
+kit, but expressed in Claude Code's native vocabulary:
+
+| Windsurf Layer | Claude Code Equivalent | Purpose |
+|---|---|---|
+| AGENTS.md | CLAUDE.md | Project truth + durable policy |
+| Rules | CLAUDE.md sections | Behavioral constraints |
+| Skills | `.claude/skills/` | Reusable multi-step procedures |
+| MCP config | `.mcp.json` | External capability access |
+| Hooks | `.claude/hooks/` + `settings.json` | Automated enforcement |
+
+The Claude Code kit adds a **sixth layer not present in the Windsurf kit**: the
+**role layer** (`.claude/agents/`), which provides sub-agent specialization for
+complex multi-step engineering tasks.
+
+### Core design concerns
+
+**Concern 1 — Responsibility collapse**
+When a single AI session handles ticket intake, implementation, testing, PR
+management, and release, it inevitably makes trade-offs that collapse into
+"just get it done." Specialized agents enforce strict scope boundaries, making
+collapses visible as explicit delegation failures rather than silent drift.
+
+**Concern 2 — Context contamination**
+A session that has written 500 lines of implementation code thinks differently
+about acceptance criteria than one that reads only the requirement and tests.
+The `qa-agent` is deliberately isolated from implementation context.
+
+**Concern 3 — Feedback loop safety**
+Automated loops (PR polling, bot PR maintenance, release watching) can become
+infinite self-repair cycles if agents are allowed to trigger other agents or
+invoke repair skills without human checkpoints. The skill-first polling design
+and hook gate-not-loop principle address this directly.
+
+---
+
+## 2. Agent Design Rationale
+
+### Why four agents?
+
+The split is derived from the four distinct cognitive modes in software engineering:
+
+```
+┌─────────────────┬────────────────────────────────────────────────┐
+│ Agent           │ Cognitive mode                                  │
+├─────────────────┼────────────────────────────────────────────────┤
+│ dev-lead-agent  │ Strategic: what to build, when, in what order  │
+│ dev-agent       │ Tactical: how to build it correctly            │
+│ qa-agent        │ Skeptical: does it actually work as expected?  │
+│ release-agent   │ Observational: did the automation succeed?     │
+└─────────────────┴────────────────────────────────────────────────┘
+```
+
+Each mode is adversarial to the others in healthy engineering:
+- The strategist wants to ship fast; the skeptic wants to slow down and verify.
+- The implementer believes the code is correct; the skeptic assumes it is not.
+- The observer doesn't care how the code was written; it only cares about outcomes.
+
+Collapsing these modes into one session removes the natural tension.
+
+### dev-lead-agent — design rationale
+
+**Why it exists:** Complex tickets arrive as ambiguous intent. Without a
+dedicated decomposition step, Claude Code starts writing code based on the
+first plausible interpretation. The `dev-lead-agent` forces a clarification
+and planning step before any code is written.
+
+**Key design decision:** `dev-lead-agent` is the only agent that may make merge
+decisions. This creates a single authorization point for repository mutation.
+
+**Design concern — authority creep:** If `dev-lead-agent` starts writing code
+"just to unblock" `dev-agent`, it defeats the separation. The agent's "What this
+agent must not do" section enforces this boundary explicitly.
+
+**Design concern — stale decomposition:** Task decompositions can go stale if
+a dependency changes mid-sprint. `dev-lead-agent` should be re-invoked (not
+`dev-agent`) when the plan needs replanning.
+
+### dev-agent — design rationale
+
+**Why it exists:** Implementation is a focused, narrow task. Giving an implementer
+agent access to orchestration decisions (ticket state, PR merges) creates
+temptation to shortcut: "I'll just merge this myself since it looks fine."
+
+**Key design decision:** `dev-agent` runs the full validation sequence before
+marking work done. It does not hand off to `qa-agent` prematurely.
+
+**Design concern — validation skipping:** Under time pressure, `dev-agent` may
+try to skip steps 1–3 of the validation sequence and jump to "done." The
+`full-test-gate.sh` and `precommit-gate.sh` hooks enforce this mechanically.
+
+**Design concern — scope creep during repair:** When CI fails, `dev-agent` may
+expand the fix beyond the minimal change. The skill's Safe-Fix Guidance section
+constrains this explicitly.
+
+### qa-agent — design rationale
+
+**Why it exists:** An agent that just implemented a feature will subconsciously
+validate the implementation rather than the requirement. `qa-agent` reads the
+requirement first and derives expected behavior independently.
+
+**Key design decision:** `qa-agent` produces a structured verdict (ready/blocked
+with reasons), not a vague "looks good." `dev-lead-agent` acts on the verdict,
+not on `qa-agent`'s judgment about whether to merge.
+
+**Design concern — happy-path bias:** Without explicit adversarial and boundary
+scenarios in the skill, `qa-agent` will default to validating only the happy path.
+The `acceptance-validation` skill forces adversarial scenario coverage.
+
+**Design concern — blocking without action:** If `qa-agent` produces a "blocked"
+verdict with uncovered edge cases, `dev-agent` needs a concrete list to act on.
+The structured output format in `acceptance-validation` enforces this.
+
+### release-agent — design rationale
+
+**Why it is thin by design:** The external release workflow (automated tag
+creation, version bumping, changelog generation) owns the release mechanics.
+A thick release agent would duplicate and potentially conflict with that workflow.
+
+**Key design decision:** `release-agent` observes and summarizes. It does not
+pull levers. This makes it safe to run in a loop during a release window without
+risk of double-triggering.
+
+**Design concern — false confidence:** If the pipeline is stuck (no progress for
+30+ minutes), a naive observer may report "in progress" indefinitely. The
+`release-watch` skill has an explicit timeout threshold and escalation rule.
+
+**Design concern — premature summary:** `release-agent` must not produce a
+success summary until the tag is confirmed and artifacts are accessible. Checking
+only that the pipeline completed is not sufficient.
+
+---
+
+## 3. Skill Design Rationale
+
+### Why skills rather than agent capabilities?
+
+Skills are reusable across agents. `dev-lead-agent` uses `pr-health-check`,
+but so can an engineer invoking `/pr-health-check` directly. If PR health-check
+logic lived inside the agent definition, it would be unreachable from the command
+interface.
+
+Skills also isolate concerns better: the skill carries the "how," the agent
+carries the "who decides what to do with the result."
+
+### New skill design concerns
+
+**`task-decomposition`**
+- Concern: Decomposition is only as good as the acceptance criteria. If criteria
+  are missing, the skill must stop and ask rather than infer. Inferring wrong
+  acceptance criteria leads to technically complete but behaviorally wrong work.
+- Concern: Dependency ordering is easy to get wrong. The output format enforces
+  explicit "depends on: N" markers rather than leaving ordering implicit.
+
+**`acceptance-validation`**
+- Concern: "All tests pass" is not the same as "acceptance criteria are met."
+  Tests often verify implementation assumptions, not requirement fulfillment.
+  The skill forces re-derivation of expected behavior from the requirement, not
+  from the test suite.
+- Concern: Adversarial scenarios are easy to skip. The skill makes them a
+  named mandatory phase, not an optional afterthought.
+
+**`pr-health-check`**
+- Concern: Classification must be deterministic. A PR classified as
+  `ready-to-merge` must meet all Auto-Merge Policy conditions, not a subjective
+  assessment of "looks ready."
+- Concern: Stale PR handling requires a comment before closure. Silent closures
+  break contributor trust.
+
+**`bot-pr-maintainer`**
+- Concern: The two-rebase-attempt limit prevents infinite rebase loops. After
+  two failures, the bot PR is escalated to the engineer.
+- Concern: A bot PR with CI failure caused by the update itself must never be
+  merged, even if it later becomes green through unrelated CI flakiness. The
+  skill requires re-classification at each poll cycle.
+
+**`release-preparation`**
+- Concern: The skill must not create a git tag. The automated workflow owns
+  tagging. If the skill creates a tag, the workflow will either fail (tag exists)
+  or produce a duplicate.
+
+**`release-watch`**
+- Concern: "Pipeline completed" is not the same as "release succeeded." The skill
+  must verify the tag was created and artifacts are accessible before declaring
+  success.
+
+---
+
+## 4. Hook Design Rationale
+
+### The gate-not-loop principle
+
+The most important constraint on the enforcement layer is:
+
+> **Hooks must gate, not repair. Repair belongs to skills and agents.**
+
+A hook that detects a failure and then tries to fix it becomes a self-repair loop.
+Self-repair loops are dangerous because:
+- They mask root causes by auto-correcting symptoms.
+- They can run indefinitely if the repair does not address the actual problem.
+- They create unpredictable state changes without engineer visibility.
+
+The four new hooks all follow the gate-not-loop pattern:
+
+```
+Hook detects condition
+        │
+        ├── condition OK → exit 0, let the command proceed
+        │
+        └── condition NOT OK → exit 2, print actionable message,
+                                name the skill or command that fixes it,
+                                do NOT attempt the fix itself
+```
+
+### Sentinel pattern (`full-test-gate.sh`)
+
+The full test gate uses a sentinel file (`~/.claude/hooks/.last-test-pass`) rather
+than running the test suite on every push attempt. This is intentional:
+
+**Why not run tests inside the hook?**
+- Running a full test suite synchronously inside a hook would block Claude Code
+  for minutes before every `git push`.
+- A hook that runs tests is also a hook that could fail tests and retry them,
+  which is exactly the self-repair loop we want to avoid.
+
+**How the sentinel pattern works:**
+
+```
+ Test suite runs (outside hook, via dev-agent or engineer)
+         │
+         ▼ all tests pass
+ touch ~/.claude/hooks/.last-test-pass
+         │
+         ▼ later: Claude Code issues git push
+         │
+         ▼ full-test-gate.sh fires
+         │
+ ┌───────┴───────────────────────────────────────────────┐
+ │  Is .last-test-pass newer than any source file?       │
+ │                                                       │
+ │  Yes → proceed. Tests were run after last change.     │
+ │  No  → block. Source changed since last clean run.    │
+ └───────────────────────────────────────────────────────┘
+```
+
+**Design concern — sentinel staleness:** The sentinel only captures the last
+passing run. If tests pass on an older commit and then new code is added without
+running tests, the sentinel will be stale and the gate will block. This is the
+correct behavior — it catches exactly the case where tests were not re-run after
+a change.
+
+**Design concern — sentinel not written:** If the test runner does not write the
+sentinel file, the gate will always block. The project's `CLAUDE.md` should
+document the sentinel write command:
+
+```bash
+# Add to the end of your test run command (or CI local script):
+touch ~/.claude/hooks/.last-test-pass
+```
+
+### Hook ordering and short-circuit behavior
+
+The PreToolUse hook chain exits on the first blocking hook (exit 2). This means:
+
+- `block_dangerous_commands.sh` runs first — catches the most obviously dangerous
+  commands before any network calls are made.
+- `freshness-gate.sh` runs second — only does a `git fetch` if the command is a
+  mutation command, so it adds minimal latency for non-mutation commands.
+- `full-test-gate.sh` runs third — only checks the sentinel file (fast file stat),
+  not the test suite itself.
+- `precommit-gate.sh` runs last — runs the full pre-commit suite, which is the
+  slowest hook. Running it last avoids running it when an earlier gate would
+  have blocked anyway.
+
+### Hook failure modes and design safeguards
+
+| Hook | If remote unreachable | If config missing | If tool missing |
+|---|---|---|---|
+| `block_dangerous_commands.sh` | N/A | Blocks on known patterns | N/A |
+| `freshness-gate.sh` | Warns, proceeds | Skips (no upstream) | Warns, proceeds |
+| `full-test-gate.sh` | N/A | Blocks (no sentinel) | N/A |
+| `precommit-gate.sh` | N/A | Skips (no config file) | Warns, proceeds |
+| `completion-contract.sh` | N/A | Warns only (exit 0) | N/A |
+
+The `freshness-gate.sh` and `precommit-gate.sh` fail open (warn, proceed) when
+their dependencies are missing, rather than blocking all pushes in
+unconfigured environments. The `full-test-gate.sh` fails closed (blocks) because
+an unknown test state is genuinely dangerous before a push.
+
+---
+
+## 5. Skill-First Polling Design
+
+### Why skill-first rather than agent-first?
+
+The time layer (recurring automation via `/loop` or scheduler) has a strong default:
+**wake a skill, not a full agent.**
+
+**Reason:** Each agent invocation starts a new context. Agents carry role definitions,
+delegation rules, and reasoning about what to do next. For routine polling work
+(check PR state, check pipeline state), this context overhead is wasted — the
+narrow skill already knows exactly what to do.
+
+| Approach | Context loaded | Actions available | Risk |
+|---|---|---|---|
+| Wake `dev-lead-agent` every 30 min | Full agent: all delegation rules, all skills | Any agent action | May take side actions beyond polling |
+| Wake `/pr-health-check` every 30 min | Narrow skill: PR classification logic only | Classify PRs, act on class | Contained and predictable |
+
+**Rule:** Wake an agent only when the skill's output requires a decision or
+coordination that the skill itself cannot make.
+
+### PR health check polling loop
+
+```mermaid
+graph TD
+    Sched["⏰ /loop 30m"]
+    PHC["/pr-health-check skill"]
+    Merge["approve + merge\n(GitHub MCP)"]
+    BPM["bot-pr-maintainer\nskill"]
+    CIT["ci-failure-triage\nskill (if in scope)"]
+    DL["dev-lead-agent\n(strategic decision needed)"]
+    Wait["wait for next poll\n(no action)"]
+    Escalate["notify engineer\n(Slack MCP)"]
+
+    Sched -->|"every N minutes"| PHC
+
+    PHC -->|"ready-to-merge"| Merge
+    PHC -->|"bot-pr-clean"| BPM
+    PHC -->|"bot-pr-conflict"| BPM
+    PHC -->|"in-progress"| Wait
+    PHC -->|"blocked-ci\n(repair in scope)"| CIT
+    PHC -->|"blocked-ci\n(repair not in scope)"| Escalate
+    PHC -->|"merge decision\nor coordination needed"| DL
+    PHC -->|"stale PR found"| DL
+
+    BPM -->|"Path A: clean → merged"| Merge
+    BPM -->|"Path B: conflict → rebase requested"| Wait
+    BPM -->|"Path C: update broke CI"| DL
+
+    DL -->|"resolved"| PHC
+    DL -->|"unresolvable"| Escalate
+```
+
+### Release window polling loop
+
+During an active release window, a separate loop runs at higher frequency:
+
+```mermaid
+graph LR
+    Sched["⏰ /loop 5m\n(release window only)"]
+    RW["release-watch skill"]
+    Sum["produce success summary\n+ Slack notification"]
+    FR["produce failure report\n+ Slack alert"]
+    Wait["wait for next poll\n(in-progress)"]
+    Eng["escalate to engineer"]
+
+    Sched -->|"every 5 min"| RW
+    RW -->|"all jobs success"| Sum
+    RW -->|"any job failure"| FR
+    RW -->|"in-progress"| Wait
+    FR -->|"transient: recommend re-run"| Eng
+    FR -->|"code/config error"| Eng
+    Wait --> Sched
+```
+
+### Loop safety rules (detailed)
+
+**Rule 1 — No loop spawns another loop.**
+A skill woken by `/loop` must not start a new `/loop`. Only the engineer or a
+top-level agent session may start or extend loops.
+
+**Rule 2 — Skills report; agents decide.**
+When `pr-health-check` finds a merge decision that requires coordination, it
+reports to `dev-lead-agent`. It does not make the merge decision itself.
+
+**Rule 3 — Repair is not a loop action.**
+If a loop-woken skill encounters a repairable failure (e.g., CI is red on a
+human PR), it classifies the failure and notes it in the health report. It does
+not invoke `ci-failure-triage` in a loop. The engineer or `dev-lead-agent` must
+explicitly initiate repair.
+
+**Exception:** Bot PR rebase (Path B in `bot-pr-maintainer`) is permitted as a
+loop action because the bot will perform the rebase independently — the skill
+only posts a comment. There is no risk of an infinite self-repair loop.
+
+**Rule 4 — Loop interval discipline.**
+- PR health check: max once every 15 minutes during working hours.
+- Release watch: max once every 5 minutes during an open release window.
+- Do not start multiple concurrent loops for the same target.
+
+---
+
+## 6. MCP Capability Routing
+
+### Which agent uses which MCP capability?
+
+MCP servers provide capabilities. Agents and skills consume those capabilities.
+The routing table below shows which agent/skill uses which MCP capability and
+for what purpose.
+
+```
+                                    MCP Capability
+                     ┌──────────────┬──────────────────┬────────────────┬────────────────┐
+                     │code_repository│ static_analysis  │issue_tracking  │communication   │
+                     │ (GitHub)      │  (SonarQube)     │(GitHub/ClickUp)│  (Slack)       │
+┌────────────────────┼──────────────┼──────────────────┼────────────────┼────────────────┤
+│ dev-lead-agent     │ PR state,     │ quality gate     │ ticket state,  │ status updates │
+│                    │ CI checks,    │ before merge     │ decomposition  │ on decisions   │
+│                    │ merge/close   │ decision         │ output         │                │
+├────────────────────┼──────────────┼──────────────────┼────────────────┼────────────────┤
+│ dev-agent          │ PR diff,      │ code smell       │ —              │ —              │
+│                    │ branch state  │ feedback         │                │                │
+├────────────────────┼──────────────┼──────────────────┼────────────────┼────────────────┤
+│ qa-agent           │ PR diff,      │ —                │ acceptance     │ —              │
+│                    │ test output   │                  │ criteria       │                │
+├────────────────────┼──────────────┼──────────────────┼────────────────┼────────────────┤
+│ release-agent      │ tag state,    │ —                │ —              │ release status │
+│                    │ pipeline runs │                  │                │ notifications  │
+├────────────────────┼──────────────┼──────────────────┼────────────────┼────────────────┤
+│ pr-health-check    │ open PRs,     │ quality gate     │ —              │ —              │
+│ skill              │ CI status,    │ on ready PRs     │                │                │
+│                    │ review state  │                  │                │                │
+├────────────────────┼──────────────┼──────────────────┼────────────────┼────────────────┤
+│ bot-pr-maintainer  │ bot PR state, │ —                │ —              │ —              │
+│ skill              │ approve+merge │                  │                │                │
+├────────────────────┼──────────────┼──────────────────┼────────────────┼────────────────┤
+│ release-watch      │ pipeline run  │ —                │ —              │ outcome        │
+│ skill              │ status, tags  │                  │                │ summary/alert  │
+└────────────────────┴──────────────┴──────────────────┴────────────────┴────────────────┘
+
+Optional capabilities (Codecov, Datadog) not shown — used by qa-agent and
+release-watch when enabled.
+```
+
+### MCP state: always-on vs. disabled-by-default
+
+```
+ Always-on (enabled out of the box)
+ ────────────────────────────────────────────────────────────────
+ github     → core: PR management, CI state, merge operations
+ fetch      → utility: URL fetching for documentation lookups
+ sonarqube  → first-class quality gate: required before merge decisions
+
+ Disabled by default (enable with project credentials)
+ ────────────────────────────────────────────────────────────────
+ clickup    → enable when project uses ClickUp for task tracking
+              requires: CLICKUP_API_TOKEN
+              image: ghcr.io/chisanan232/clickup-mcp-server:latest
+              [VERIFY IMAGE README before enabling]
+
+ slack      → enable when team uses Slack for notifications
+              requires: SLACK_BOT_TOKEN, SLACK_TEAM_ID
+              image: ghcr.io/chisanan232/slack-mcp-server:latest
+              [VERIFY IMAGE README before enabling]
+
+ codecov    → enable when coverage trend tracking is needed for PRs
+              requires: CODECOV_TOKEN
+              used by: qa-agent (acceptance-validation), pr-readiness
+
+ datadog    → enable for production incident and log triage
+              requires: DD_API_KEY, DD_APP_KEY
+              not used by any agent directly; enables observability queries
+```
+
+### Design concern — SonarQube as always-on
+
+SonarQube is the only analysis tool promoted to always-on status in this upgrade.
+This is a deliberate choice with a trade-off:
+
+**Why always-on:**
+- Quality gate checks are a prerequisite for merge decisions, not optional audits.
+- If SonarQube is disabled, `pr-health-check` and `pr-readiness` silently skip
+  quality gate verification, creating a false impression of readiness.
+- Making it always-on makes the expectation explicit: configure it or explain why
+  it is not relevant.
+
+**Trade-off:**
+- Requires `SONAR_TOKEN` and `SONAR_HOST_URL` to be set for the MCP to start.
+- Teams that do not use SonarQube must explicitly set `"disabled": true` to
+  avoid startup errors.
+- Teams using a different static analysis tool (CodeClimate, Snyk) should replace
+  the `sonarqube` entry with their own server and update the `_role` note.
+
+### Design concern — ClickUp vs. GitHub Issues
+
+The kit provides both `github` (which covers `issue_tracking`) and `clickup`.
+Teams should use one, not both, for issue tracking. The guidance:
+
+- **If your team uses ClickUp:** Enable `clickup`, use it as the primary
+  `issue_tracking` capability. Use `github` for PR and CI operations only.
+- **If your team uses GitHub Issues:** The `github` server already covers
+  `issue_tracking`. Do not enable `clickup`.
+- **If your team uses both:** Document explicitly which system is the source
+  of truth for task state. Ambiguity between two issue trackers leads to
+  inconsistent ticket updates.
+
+---
+
+## 7. Further Reading
+
+| Document | What it covers |
+|---|---|
+| `CONFIGURATION-OVERVIEW.md` | Full directory structure, hook wiring, MCP map |
+| `claude-code-config/CLAUDE.md` | All 20 policy sections — the durable constitution |
+| `claude-code-config/.claude/agents/dev-lead-agent.md` | Full dev-lead-agent responsibilities |
+| `claude-code-config/.claude/agents/dev-agent.md` | Full dev-agent responsibilities |
+| `claude-code-config/.claude/agents/qa-agent.md` | Full qa-agent responsibilities |
+| `claude-code-config/.claude/agents/release-agent.md` | Full release-agent responsibilities |
+| `docs/architecture-rationale.md` | Windsurf Cascade layer model rationale |
+| `docs/mcp-integration.md` | MCP capability model and integration guidance |

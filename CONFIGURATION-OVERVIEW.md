@@ -12,32 +12,125 @@ A **production-minded, generic-first configuration starter kit** for structuring
 
 ### Overview
 
-The Claude Code kit lives under `claude-code-config/` and is designed from scratch for Claude Code's native configuration system. It uses shell-based hooks, `CLAUDE.md` as the project truth document, and Claude Code's Skills system.
+The Claude Code kit lives under `claude-code-config/` and is designed from scratch for Claude Code's native configuration system. It uses shell-based hooks, `CLAUDE.md` as the project truth document, Claude Code's Skills system, and a four-agent role layer for complex multi-step tasks.
+
+### Layer Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                          CLAUDE.md (20 sections)                    │
+│                   Constitution · Policy · Automation Rules          │
+│  identity · architecture · commands · safe-impl · testing ·        │
+│  commit policy · PR policy · CI triage · auto-merge · bot-PR ·     │
+│  push gate · preconditions · release ops · delegation model ·      │
+│  time-layer · skill guide · forbidden actions                       │
+└───────────────────────────────┬─────────────────────────────────────┘
+                                │ governs
+┌───────────────────────────────▼─────────────────────────────────────┐
+│                  Role Layer  (.claude/agents/)                       │
+│                                                                     │
+│  ┌─────────────────┐  delegates  ┌────────────────┐                 │
+│  │  dev-lead-agent │────────────►│   dev-agent    │                 │
+│  │  (orchestrate)  │             │  (implement)   │                 │
+│  └────────┬────────┘             └────────────────┘                 │
+│           │         delegates  ┌─────────────────┐                  │
+│           ├──────────────────►│    qa-agent      │                  │
+│           │                   │  (validate)      │                  │
+│           │                   └─────────────────┘                   │
+│           │         hands off ┌─────────────────┐                   │
+│           └─────────────────►│  release-agent   │                   │
+│                               │  (observe)       │                   │
+│                               └─────────────────┘                   │
+└───────────────────────────────┬─────────────────────────────────────┘
+                                │ invokes
+┌───────────────────────────────▼─────────────────────────────────────┐
+│                 Method Layer  (.claude/skills/)                      │
+│                                                                     │
+│  Orchestration skills         Implementation skills                  │
+│  ─────────────────            ────────────────────                   │
+│  task-decomposition           feature-implementation                 │
+│  pr-health-check              test-design                            │
+│  bot-pr-maintainer            ci-failure-triage                      │
+│                               python-mypy-debugging                  │
+│  Validation skills            python-ruff-fixing                     │
+│  ─────────────────            python-precommit-repair                │
+│  acceptance-validation                                               │
+│                               Release skills                         │
+│  Gate skills (command-like)   ─────────────                          │
+│  ───────────────────────      release-preparation                    │
+│  pr-readiness                 release-watch                          │
+│  release-readiness                                                   │
+│  dependency-upgrade-review                                           │
+└───────────────────────────────┬─────────────────────────────────────┘
+                                │ queries
+┌───────────────────────────────▼─────────────────────────────────────┐
+│                Capability Layer  (.mcp.json)                         │
+│                                                                     │
+│  Always-on                    Disabled by default                    │
+│  ──────────                   ──────────────────                     │
+│  github  (code_repository,    clickup  (issue_tracking)              │
+│           issue_tracking)     slack    (communication)               │
+│  fetch   (utility)            codecov  (coverage_reporting)          │
+│  sonarqube (static_analysis)  datadog  (observability)               │
+└───────────────────────────────┬─────────────────────────────────────┘
+                                │ enforces
+┌───────────────────────────────▼─────────────────────────────────────┐
+│            Enforcement Layer  (.claude/hooks/ + settings.json)       │
+│                                                                     │
+│  PreToolUse[Bash]             PostToolUse[Write|Edit]                │
+│  ────────────────             ──────────────────────                 │
+│  block_dangerous_commands     quality_gate                           │
+│  freshness-gate                                                      │
+│  full-test-gate               PostToolUse[Bash]                      │
+│  precommit-gate               ────────────────                       │
+│                               audit_log                              │
+│                               completion-contract                    │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ### Directory Structure
 
 ```
 claude-code-config/
-├── CLAUDE.md                            # 13-section project truth template
+├── CLAUDE.md                            # 20-section project truth and policy constitution
 ├── settings.json                        # Hook wiring (PreToolUse / PostToolUse)
 ├── .mcp.json                            # MCP capability map
 └── .claude/
+    ├── agents/                          # Sub-agent role definitions
+    │   ├── dev-lead-agent.md            # Orchestration: decomposition, PR decisions, bot PR coordination
+    │   ├── dev-agent.md                 # Implementation: code, tests, local validation, CI repair
+    │   ├── qa-agent.md                  # Validation: acceptance criteria, adversarial testing, regressions
+    │   └── release-agent.md             # Observation: release notes, pipeline watch, outcome summary
     ├── hooks/
     │   ├── block_dangerous_commands.sh  # PreToolUse[Bash]: blocks rm -rf, force push, curl|bash, etc.
     │   ├── quality_gate.sh              # PostToolUse[Write|Edit]: debug detection, TODO hygiene, file size
-    │   └── audit_log.sh                 # PostToolUse[Bash]: append-only JSONL audit log with rotation
+    │   ├── audit_log.sh                 # PostToolUse[Bash]: append-only JSONL audit log with rotation
+    │   ├── freshness-gate.sh            # PreToolUse[Bash]: blocks commit/push if branch is behind remote
+    │   ├── full-test-gate.sh            # PreToolUse[Bash]: blocks push if tests not re-run after changes
+    │   ├── precommit-gate.sh            # PreToolUse[Bash]: runs pre-commit before push, blocks on failure
+    │   └── completion-contract.sh       # PostToolUse[Bash]: warns when failure markers appear before done
     └── skills/
-        ├── feature-implementation/SKILL.md   # Auto-used: test-first feature implementation (6 phases)
-        ├── test-design/SKILL.md              # Auto-used: behavior-first test design
-        ├── code-review-prep/SKILL.md         # Auto-used: pre-PR quality gate + description generation
-        ├── ci-failure-triage/SKILL.md        # Auto-used: 6-phase CI failure triage
-        ├── python-mypy-debugging/SKILL.md    # Auto-used: mypy error diagnosis and safe repair
-        ├── python-ruff-fixing/SKILL.md       # Auto-used: ruff violation fixing with auto-fix review
-        ├── python-precommit-repair/SKILL.md  # Auto-used: pre-commit repair without --no-verify
-        ├── pr-readiness/SKILL.md             # Command-like (/pr-readiness): full PR readiness checklist
-        ├── release-readiness/SKILL.md        # Command-like (/release-readiness): release gate checklist
-        └── dependency-upgrade-review/SKILL.md # Command-like: dependency upgrade risk classification
+        ├── feature-implementation/SKILL.md      # Auto-used: test-first feature implementation (6 phases)
+        ├── test-design/SKILL.md                 # Auto-used: behavior-first test design
+        ├── code-review-prep/SKILL.md            # Auto-used: pre-PR quality gate + description generation
+        ├── ci-failure-triage/SKILL.md           # Auto-used: 6-phase CI failure triage
+        ├── python-mypy-debugging/SKILL.md       # Auto-used: mypy error diagnosis and safe repair
+        ├── python-ruff-fixing/SKILL.md          # Auto-used: ruff violation fixing with auto-fix review
+        ├── python-precommit-repair/SKILL.md     # Auto-used: pre-commit repair without --no-verify
+        ├── task-decomposition/SKILL.md          # Auto-used: ticket → ordered task list with agent assignments
+        ├── acceptance-validation/SKILL.md       # Auto-used: acceptance criteria + adversarial validation
+        ├── bot-pr-maintainer/SKILL.md           # Auto-used: clean merge / rebase / escalate for bot PRs
+        ├── pr-readiness/SKILL.md                # Command-like (/pr-readiness): full PR readiness checklist
+        ├── pr-health-check/SKILL.md             # Command-like (/pr-health-check): classify and act on all open PRs
+        ├── release-readiness/SKILL.md           # Command-like (/release-readiness): release gate checklist
+        ├── release-preparation/SKILL.md         # Command-like (/release-preparation): notes, version config
+        ├── release-watch/SKILL.md               # Auto-used: pipeline observation and outcome summary
+        └── dependency-upgrade-review/SKILL.md   # Command-like: dependency upgrade risk classification
 ```
+
+> **Deep dive:** For design rationale, architectural concerns, hook design principles,
+> skill-first polling diagrams, and MCP capability routing, see
+> [`docs/claude-code-agent-system.md`](docs/claude-code-agent-system.md).
 
 ### Key Differences from Windsurf Cascade Kit
 
@@ -54,8 +147,9 @@ claude-code-config/
 
 ### CLAUDE.md Sections
 
-The `CLAUDE.md` template covers 13 sections:
+The `CLAUDE.md` template covers 20 sections organized in three groups:
 
+**Engineering policy**
 1. Repository Identity
 2. Architecture Constraints
 3. Package and Build Commands
@@ -68,34 +162,147 @@ The `CLAUDE.md` template covers 13 sections:
 10. CI/CD Triage Expectations
 11. Source-of-Truth Systems
 12. MCP-Backed Systems
-13. Skill Invocation Guide and Hard Limits
+
+**Workflow gates and automation policy**
+13. Auto-Merge Policy
+14. Bot PR Policy
+15. Push Gate Policy
+16. Development Preconditions
+17. Release Operations Policy
+18. Time-Layer Design (skill-first polling and scheduling)
+
+**Skill and agent coordination**
+19. Agent Delegation Model
+20. Skill Invocation Guide and Hard Limits
+
+### Role Layer (.claude/agents/)
+
+The Claude Code kit includes a four-agent role model for complex multi-step tasks:
+
+| Agent | File | Scope |
+|-------|------|-------|
+| `dev-lead-agent` | `agents/dev-lead-agent.md` | Orchestration, task decomposition, PR review, merge decisions, bot PR coordination |
+| `dev-agent` | `agents/dev-agent.md` | Implementation, test writing, local validation, focused CI repair |
+| `qa-agent` | `agents/qa-agent.md` | Acceptance validation, adversarial testing, regression checks, pre-merge verdict |
+| `release-agent` | `agents/release-agent.md` | Release note drafting, version config updates, pipeline observation, outcome summary |
+
+**Delegation rules (enforced by CLAUDE.md Agent Delegation Model section):**
+- `dev-lead-agent` orchestrates; it does not write implementation code.
+- `dev-agent` implements; it does not approve or merge PRs.
+- `qa-agent` validates from outside; it does not write fixes.
+- `release-agent` observes; it does not trigger releases or merge PRs.
+
+**Agent delegation flow:**
+
+```mermaid
+graph TD
+    E["👤 Engineer / Ticket"]
+    DL["dev-lead-agent\n(orchestration)"]
+    D["dev-agent\n(implementation)"]
+    QA["qa-agent\n(validation)"]
+    R["release-agent\n(observation)"]
+
+    TD["task-decomposition"]
+    PHC["pr-health-check"]
+    BPM["bot-pr-maintainer"]
+    FI["feature-implementation"]
+    TST["test-design"]
+    CI["ci-failure-triage"]
+    AV["acceptance-validation"]
+    RP["release-preparation"]
+    RW["release-watch"]
+
+    E -->|"ticket arrives"| DL
+    DL -->|"decompose"| TD
+    DL -->|"delegate impl"| D
+    DL -->|"delegate QA"| QA
+    DL -->|"open release window"| R
+    DL -->|"poll PRs"| PHC
+    PHC -->|"bot PR found"| BPM
+
+    D --> FI
+    D --> TST
+    D --> CI
+
+    QA --> AV
+
+    R --> RP
+    R --> RW
+
+    BPM -->|"clean: merge"| DL
+    BPM -->|"conflict: rebase\nthen re-poll"| PHC
+    BPM -->|"CI broken by update"| DL
+
+    AV -->|"verdict: ready"| DL
+    AV -->|"verdict: blocked"| D
+```
 
 ### Hook Wiring (settings.json)
 
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      { "matcher": "Bash", "hooks": [{ "type": "command", "command": ".claude/hooks/block_dangerous_commands.sh" }] }
-    ],
-    "PostToolUse": [
-      { "matcher": "Write|Edit", "hooks": [{ "type": "command", "command": ".claude/hooks/quality_gate.sh" }] },
-      { "matcher": "Bash", "hooks": [{ "type": "command", "command": ".claude/hooks/audit_log.sh" }] }
-    ]
-  }
-}
+Seven hooks wired across two trigger points. The push gate sequence is the most important to understand:
+
 ```
+ Claude Code issues: git push ...
+         │
+         ▼  PreToolUse[Bash] fires — sequential chain
+ ┌───────────────────────────────────────────────────────┐
+ │ 1. block_dangerous_commands.sh                        │
+ │    Pattern match against known destructive commands.  │
+ │    BLOCKED (exit 2) → stop. Command never runs.       │
+ └───────────────────────┬───────────────────────────────┘
+                         │ pass
+ ┌───────────────────────▼───────────────────────────────┐
+ │ 2. freshness-gate.sh                                  │
+ │    git fetch origin; count commits behind upstream.   │
+ │    BLOCKED (exit 2) → run git pull --rebase first.    │
+ └───────────────────────┬───────────────────────────────┘
+                         │ pass
+ ┌───────────────────────▼───────────────────────────────┐
+ │ 3. full-test-gate.sh                                  │
+ │    Check sentinel file age vs. newest source file.    │
+ │    BLOCKED (exit 2) → re-run the full test suite.     │
+ └───────────────────────┬───────────────────────────────┘
+                         │ pass
+ ┌───────────────────────▼───────────────────────────────┐
+ │ 4. precommit-gate.sh                                  │
+ │    Run pre-commit run --all-files.                    │
+ │    BLOCKED (exit 2) → fix violations; use             │
+ │                        python-precommit-repair skill. │
+ └───────────────────────┬───────────────────────────────┘
+                         │ all pass
+         ▼  git push executes
+         │
+         ▼  PostToolUse[Bash] fires
+ ┌───────────────────────────────────────────────────────┐
+ │ 5. audit_log.sh      — log the push to JSONL          │
+ │ 6. completion-contract.sh — scan output for FAILED,   │
+ │    ERROR, etc. Warn if failure markers present.       │
+ └───────────────────────────────────────────────────────┘
+```
+
+Seven hooks wired across two trigger points:
+
+| Trigger | Matcher | Hook | Purpose |
+|---------|---------|------|---------|
+| `PreToolUse` | `Bash` | `block_dangerous_commands.sh` | Block `rm -rf`, force push, `curl\|bash`, etc. |
+| `PreToolUse` | `Bash` | `freshness-gate.sh` | Block commit/push if branch is behind remote |
+| `PreToolUse` | `Bash` | `full-test-gate.sh` | Block push if tests not re-run after source changes |
+| `PreToolUse` | `Bash` | `precommit-gate.sh` | Run `pre-commit --all-files` before push; block on failure |
+| `PostToolUse` | `Write\|Edit` | `quality_gate.sh` | Debug detection, TODO hygiene, file size checks |
+| `PostToolUse` | `Bash` | `audit_log.sh` | Append-only JSONL audit log with rotation |
+| `PostToolUse` | `Bash` | `completion-contract.sh` | Warn if failure markers appear before task completion |
 
 ### MCP Capability Map (.mcp.json)
 
-| Server | Capabilities | Default State |
-|--------|-------------|---------------|
-| `github-mcp-server` | `code_repository`, `issue_tracking` | Active |
-| `fetch` | Web and URL fetching | Active |
-| `sonarqube` | `static_analysis` | Disabled |
-| `codecov` | `coverage_reporting` | Disabled |
-| `slack` | `communication` | Disabled |
-| `datadog` | `observability` | Disabled |
+| Server | Capabilities | Default State | Notes |
+|--------|-------------|---------------|-------|
+| `github` | `code_repository`, `issue_tracking` | **Active** | Core: always enabled |
+| `fetch` | `fetch` | **Active** | Utility: URL fetching |
+| `sonarqube` | `static_analysis` | **Active** | First-class quality gate; run before every PR merge |
+| `clickup` | `issue_tracking` | Disabled | Enable with `CLICKUP_API_TOKEN`; uses `chisanan232/clickup-mcp-server` |
+| `slack` | `communication` | Disabled | Enable with `SLACK_BOT_TOKEN`; uses `chisanan232/slack-mcp-server` |
+| `codecov` | `coverage_reporting` | Disabled | Optional; enable when coverage trend tracking is needed |
+| `datadog` | `observability` | Disabled | Optional; enable for incident and log triage |
 
 ---
 

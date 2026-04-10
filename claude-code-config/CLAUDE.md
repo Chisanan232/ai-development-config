@@ -296,6 +296,48 @@ approximation. When it is not available, proceed without it and note the gap.
 
 ---
 
+## Time-Layer Design — Skill-First Polling and Scheduling
+
+Claude Code may run recurring tasks using `/loop` or a scheduler. The rule is:
+**prefer waking narrow skills, not full agents, for polling and status checks.**
+
+### Default rule
+
+- Wake a **skill** for narrow, scoped checks (PR health, bot PR maintenance, pipeline state).
+- Wake **`dev-lead-agent`** only when strategic re-planning or multi-step coordination
+  is needed as a result of what the polling found.
+
+### Primary recurring automation targets
+
+| Target | Skill to wake | Wake agent if |
+|---|---|---|
+| PR health checks | `pr-health-check` | A PR requires merge decision or escalation |
+| Bot PR maintenance | `bot-pr-maintainer` (via `pr-health-check`) | CI failure caused by the update itself |
+| Release pipeline observation | `release-watch` | Pipeline fails and engineer action is needed |
+
+### Polling intervals (project-configurable)
+
+- PR health check: every [PROJECT-SPECIFIC] minutes (e.g., every 30 min during working hours)
+- Release watch: every [PROJECT-SPECIFIC] minutes during an open release window (e.g., every 5 min)
+
+### How to configure
+
+Use `/loop <interval> /pr-health-check` to start a recurring PR health check.
+Use `/loop <interval> /release-preparation` then `/loop <interval> /release-watch`
+during a release window.
+
+Do not start a loop on a full agent (`dev-lead-agent`) for routine polling.
+Agents are stateful and expensive to wake repeatedly — use them only when
+the skill's output indicates a decision or coordination is needed.
+
+### Loop safety rules
+
+- A skill woken by a loop must not trigger another loop.
+- A skill must not enter a self-repair cycle — it must report failure and exit.
+- If a repair action is needed, the skill reports it; the engineer or agent decides.
+
+---
+
 ## Skill Invocation Guide
 
 The following skills are available for this repository. Invoke them by their
@@ -310,9 +352,188 @@ slash command or by asking Claude Code to run the named procedure.
 | `python-mypy-debugging` | Auto | When mypy reports type errors |
 | `python-ruff-fixing` | Auto | When ruff reports lint violations |
 | `python-precommit-repair` | Auto | When pre-commit hooks fail |
+| `task-decomposition` | Auto | When a ticket arrives and needs decomposition |
+| `acceptance-validation` | Auto | Before declaring implementation complete (qa-agent) |
+| `bot-pr-maintainer` | Auto | When a bot PR is classified as clean or conflicted |
 | `/pr-readiness` | Command | Before opening a PR (full checklist run) |
+| `/pr-health-check` | Command | At each polling interval to assess all open PRs |
 | `/release-readiness` | Command | Before tagging a release |
+| `/release-preparation` | Command | When a release window opens |
 | `/dependency-upgrade-review` | Command | Before merging a dependency bump PR |
+
+---
+
+## Auto-Merge Policy
+
+A pull request may be merged automatically only when **all** of the following conditions are met:
+
+1. **Code owner approval is present** — at least one required reviewer has approved.
+2. **All required CI checks pass** — no red status checks on the PR.
+3. **No merge conflicts** — the branch merges cleanly into the base.
+4. **No unresolved blocking comments** — all `Request Changes` reviews are resolved or dismissed.
+5. **Branch is up to date** — the PR branch includes the latest commits from the base branch.
+
+If any condition is not met, do not merge. Wait, fix, or escalate.
+
+### Who may trigger auto-merge
+
+- `dev-lead-agent` is the only agent that may approve merge decisions.
+- `dev-agent` and `qa-agent` must not independently trigger merges.
+- Engineer may override and merge manually at any time.
+
+### Merge strategy
+
+Use the merge strategy configured for this repository.
+[PROJECT-SPECIFIC — e.g., squash merge for feature PRs, rebase merge for dependency bumps]
+
+---
+
+## Bot PR Policy
+
+Dependency bots (Dependabot, Renovate) and pre-commit maintenance bots produce
+automated PRs that follow a distinct handling path.
+
+### Standard bot PR handling
+
+If a bot PR meets all of the following:
+- CI is green
+- No merge conflicts
+- No scope expansion beyond the automated update
+
+Then: **approve and merge automatically**.
+
+### Bot PR with lock-file conflicts
+
+If a bot PR has lock-file conflicts (e.g., `poetry.lock`, `uv.lock`, `package-lock.json`):
+
+1. Request a rebase using the bot's supported rebase mechanism
+   (e.g., comment `@dependabot rebase` or `@renovatebot rebase`).
+2. Wait for the bot to rebase and CI to rerun.
+3. Re-evaluate the PR against the standard bot PR handling criteria.
+4. Approve and merge only when it is clean and CI is green.
+
+Do not manually resolve lock-file conflicts in bot PRs — let the bot handle it.
+
+### Bot PR with CI failure
+
+If a bot PR has CI failure after rebase:
+- Investigate the failure root cause.
+- If the failure is unrelated to the update, note it and proceed.
+- If the failure is caused by the update itself, escalate to the engineer — do not merge.
+
+### Bot PR oversight
+
+The `bot-pr-maintainer` skill and `pr-health-check` skill manage this loop.
+`dev-lead-agent` coordinates bot PR state at each polling interval.
+
+---
+
+## Push Gate Policy
+
+Claude Code must not push to any remote branch unless all of the following are true:
+
+1. **Full test suite passes** — run the complete test suite locally, not just impacted tests.
+2. **Pre-commit hooks pass** — run `pre-commit run --all-files`. Zero failures.
+3. **Linter is clean** — zero violations.
+4. **Type checker is clean** — zero errors.
+5. **No uncommitted changes remain** — working tree is clean before pushing.
+6. **Branch is not behind remote** — pull or rebase before pushing to avoid clobbering.
+
+### Force-push rules
+
+- Force-push is **forbidden** on `main` / `master` / release branches under any circumstance.
+- Force-push on feature branches requires **explicit engineer confirmation** and is
+  only permitted when rebasing on the base branch (not to rewrite merged history).
+- Never force-push during an active code review.
+
+### What gates the push
+
+The `full-test-gate.sh` and `precommit-gate.sh` hooks enforce this automatically.
+If either hook fails, the push is blocked. Fix the failure — do not use `--no-verify`.
+
+---
+
+## Development Preconditions
+
+Before beginning any implementation task, Claude Code must verify:
+
+1. **Branch is current** — local branch is up to date with the expected remote base.
+   Run `git fetch origin` and confirm no divergence before writing code.
+2. **CI is not red on the base branch** — do not start work on top of a broken base.
+   Check the most recent CI run on `main` (or the target branch) before branching.
+3. **No uncommitted state** — working tree must be clean before switching branches
+   or beginning a new task.
+4. **Dependencies are installed** — run the install command if `uv.lock` / `package-lock.json`
+   (or equivalent) has changed since the last install.
+5. **Pre-commit hooks are active** — confirm `.git/hooks/pre-commit` is installed.
+   Run `pre-commit install` if missing.
+
+If any precondition fails, stop and resolve it before writing any code.
+Do not proceed on a stale or broken foundation.
+
+---
+
+## Release Operations Policy
+
+The external release workflow (automated tag creation, version bumping, changelog
+generation) handles the mechanics of releasing. Claude Code's role is **observational
+and preparatory**, not operational.
+
+### What Claude Code does during a release window
+
+1. **Identify changes** — inspect the commits in the release window (since the last tag).
+2. **Prepare release notes** — draft human-readable changelog content.
+3. **Update release intent config** — update version references or release config files
+   if the project uses them (e.g., `pyproject.toml`, `package.json`, `CHANGELOG.md`).
+4. **Observe release workflow state** — monitor the automated release CI pipeline.
+5. **Summarize outcome** — report success or failure with links to the release artifact.
+
+### What Claude Code must not do during release
+
+- Do not manually create git tags unless the automated workflow has definitively failed
+  and the engineer has explicitly requested manual intervention.
+- Do not push directly to `main` / `master` during a release window.
+- Do not modify CI/CD pipeline definitions during active release.
+- Do not publish packages to registries — this is the automated workflow's job.
+
+### Release coordination
+
+`release-agent` handles release observation. It is thin by design — it does not
+replace the automated workflow, it monitors and summarizes it.
+
+---
+
+## Agent Delegation Model
+
+Claude Code may invoke specialized sub-agents for complex multi-step tasks.
+Each agent has a defined scope. Do not conflate responsibilities across agents.
+
+### Agent roster
+
+| Agent | File | Primary scope |
+|---|---|---|
+| `dev-lead-agent` | `.claude/agents/dev-lead-agent.md` | Planning, decomposition, PR decisions, coordination |
+| `dev-agent` | `.claude/agents/dev-agent.md` | Code implementation, test writing, local validation |
+| `qa-agent` | `.claude/agents/qa-agent.md` | Acceptance validation, regression checks, edge cases |
+| `release-agent` | `.claude/agents/release-agent.md` | Release observation, notes, outcome summary |
+
+### Delegation rules
+
+1. `dev-lead-agent` is the orchestrator. It decomposes tasks, assigns work to other
+   agents, reviews PRs, and makes merge decisions.
+2. `dev-agent` implements. It must not make merge decisions or orchestration choices.
+3. `qa-agent` validates from an external tester perspective. It must not implement.
+4. `release-agent` observes and summarizes. It must not trigger releases directly.
+5. When no agent delegation is needed (simple focused tasks), Claude Code acts directly.
+6. Never collapse all responsibilities into a single agent invocation.
+
+### When to wake each agent
+
+- **`dev-lead-agent`**: when a ticket arrives, when a PR needs review, when strategic
+  re-planning is required, when coordinating bot PR maintenance.
+- **`dev-agent`**: when implementation, test writing, or focused CI repair is needed.
+- **`qa-agent`**: when acceptance criteria must be verified, before a PR is merged.
+- **`release-agent`**: when a release window opens or the release pipeline needs monitoring.
 
 ---
 

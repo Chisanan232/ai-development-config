@@ -30,7 +30,7 @@
         "SONAR_HOST_URL": "${SONAR_HOST_URL}"
       },
       "capabilities": ["static_analysis"],
-      "disabled": true
+      "_role": "First-class quality gate: run before every PR merge decision via pr-health-check and pr-readiness skills"
     },
     "codecov": {
       "command": "docker",
@@ -43,6 +43,7 @@
         "CODECOV_TOKEN": "${CODECOV_TOKEN}"
       },
       "capabilities": ["coverage_reporting"],
+      "_role": "Optional: enable when coverage trend tracking is required for PR merge decisions. Used by qa-agent acceptance-validation and pr-readiness skills.",
       "disabled": true
     },
     "slack": {
@@ -51,13 +52,28 @@
         "run", "--rm", "-i",
         "-e", "SLACK_BOT_TOKEN",
         "-e", "SLACK_TEAM_ID",
-        "mcp/slack"
+        "ghcr.io/chisanan232/slack-mcp-server:latest"
       ],
       "env": {
         "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
         "SLACK_TEAM_ID": "${SLACK_TEAM_ID}"
       },
+      "_note": "[VERIFY IMAGE README] Confirm required env vars and runtime args at https://github.com/chisanan232/slack-mcp-server before enabling",
       "capabilities": ["communication"],
+      "disabled": true
+    },
+    "clickup": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "CLICKUP_API_TOKEN",
+        "ghcr.io/chisanan232/clickup-mcp-server:latest"
+      ],
+      "env": {
+        "CLICKUP_API_TOKEN": "${CLICKUP_API_TOKEN}"
+      },
+      "_note": "[VERIFY IMAGE README] Confirm required env vars and runtime args at https://github.com/chisanan232/clickup-mcp-server before enabling",
+      "capabilities": ["issue_tracking"],
       "disabled": true
     },
     "datadog": {

@@ -7,6 +7,18 @@
           {
             "type": "command",
             "command": "bash ~/.claude/hooks/block_dangerous_commands.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/freshness-gate.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/full-test-gate.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/precommit-gate.sh"
           }
         ]
       }
@@ -27,6 +39,10 @@
           {
             "type": "command",
             "command": "bash ~/.claude/hooks/audit_log.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/completion-contract.sh"
           }
         ]
       }
