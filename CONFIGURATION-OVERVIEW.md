@@ -1,8 +1,105 @@
-# Windsurf Cascade Configuration Kit — Complete Overview
+# AI Development Configuration Kit — Complete Overview
 
-This document provides a complete overview of the Windsurf Cascade configuration kit.
+This document provides a complete overview of both configuration kits in this repository.
 
 ## What is This Kit?
+
+A **production-minded, generic-first configuration starter kit** for structuring AI-assisted software development. Two parallel kits are provided — one for Windsurf Cascade and one for Claude Code — both expressing the same engineering philosophy using each tool's native layers.
+
+---
+
+## Claude Code Configuration Kit
+
+### Overview
+
+The Claude Code kit lives under `claude-code-config/` and is designed from scratch for Claude Code's native configuration system. It uses shell-based hooks, `CLAUDE.md` as the project truth document, and Claude Code's Skills system.
+
+### Directory Structure
+
+```
+claude-code-config/
+├── CLAUDE.md                            # 13-section project truth template
+├── settings.json                        # Hook wiring (PreToolUse / PostToolUse)
+├── .mcp.json                            # MCP capability map
+└── .claude/
+    ├── hooks/
+    │   ├── block_dangerous_commands.sh  # PreToolUse[Bash]: blocks rm -rf, force push, curl|bash, etc.
+    │   ├── quality_gate.sh              # PostToolUse[Write|Edit]: debug detection, TODO hygiene, file size
+    │   └── audit_log.sh                 # PostToolUse[Bash]: append-only JSONL audit log with rotation
+    └── skills/
+        ├── feature-implementation/SKILL.md   # Auto-used: test-first feature implementation (6 phases)
+        ├── test-design/SKILL.md              # Auto-used: behavior-first test design
+        ├── code-review-prep/SKILL.md         # Auto-used: pre-PR quality gate + description generation
+        ├── ci-failure-triage/SKILL.md        # Auto-used: 6-phase CI failure triage
+        ├── python-mypy-debugging/SKILL.md    # Auto-used: mypy error diagnosis and safe repair
+        ├── python-ruff-fixing/SKILL.md       # Auto-used: ruff violation fixing with auto-fix review
+        ├── python-precommit-repair/SKILL.md  # Auto-used: pre-commit repair without --no-verify
+        ├── pr-readiness/SKILL.md             # Command-like (/pr-readiness): full PR readiness checklist
+        ├── release-readiness/SKILL.md        # Command-like (/release-readiness): release gate checklist
+        └── dependency-upgrade-review/SKILL.md # Command-like: dependency upgrade risk classification
+```
+
+### Key Differences from Windsurf Cascade Kit
+
+| Aspect | Windsurf Cascade | Claude Code |
+|--------|-----------------|-------------|
+| Project truth | `AGENTS.md` | `CLAUDE.md` |
+| Config directory | `.windsurf/` | `.claude/` |
+| Hook language | Python (`.py`) | Shell (`.sh`) |
+| Hook trigger config | `.windsurf/hooks.json` | `settings.json` (PreToolUse/PostToolUse) |
+| Hook triggers | `post_write_code`, `pre_run_command` | `PreToolUse[Bash]`, `PostToolUse[Write\|Edit\|Bash]` |
+| Workflows | `.windsurf/workflows/*.md` | Command-like skills (`/pr-readiness`, etc.) |
+| Rules | `.windsurf/rules/*.md` | Inline sections in `CLAUDE.md` |
+| MCP config | `.windsurf/mcp_config.json` | `.mcp.json` |
+
+### CLAUDE.md Sections
+
+The `CLAUDE.md` template covers 13 sections:
+
+1. Repository Identity
+2. Architecture Constraints
+3. Package and Build Commands
+4. Safe Implementation Policy
+5. Testing Expectations
+6. Type Checking Policy
+7. Linting and Formatting Policy
+8. Commit Policy
+9. Pull Request Policy
+10. CI/CD Triage Expectations
+11. Source-of-Truth Systems
+12. MCP-Backed Systems
+13. Skill Invocation Guide and Hard Limits
+
+### Hook Wiring (settings.json)
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": ".claude/hooks/block_dangerous_commands.sh" }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Write|Edit", "hooks": [{ "type": "command", "command": ".claude/hooks/quality_gate.sh" }] },
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": ".claude/hooks/audit_log.sh" }] }
+    ]
+  }
+}
+```
+
+### MCP Capability Map (.mcp.json)
+
+| Server | Capabilities | Default State |
+|--------|-------------|---------------|
+| `github-mcp-server` | `code_repository`, `issue_tracking` | Active |
+| `fetch` | Web and URL fetching | Active |
+| `sonarqube` | `static_analysis` | Disabled |
+| `codecov` | `coverage_reporting` | Disabled |
+| `slack` | `communication` | Disabled |
+| `datadog` | `observability` | Disabled |
+
+---
+
+## Windsurf Cascade Configuration Kit
 
 A **production-minded, generic-first Windsurf Cascade configuration starter kit** for structuring AI-assisted software development.
 

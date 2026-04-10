@@ -1,19 +1,23 @@
-# Getting Started with Windsurf Cascade Configuration
+# Getting Started with the AI Development Configuration Kit
 
-This guide helps you get started with the Windsurf Cascade configuration kit.
+This guide helps you get started with the configuration kits in this repository.
 
 ## What is This?
 
-This is a **production-minded Windsurf Cascade configuration starter kit** designed to structure AI-assisted software development.
+This repository provides **production-minded configuration starter kits** for AI-assisted software development. Two parallel kits are available:
 
-It provides:
-* `AGENTS.md` for project truth and context
-* Rules for behavioral constraints
-* Skills for reusable procedures
-* Workflows for manual runbooks
-* Hooks for enforcement and auditing
+| Kit | Best for | Entry point |
+|-----|----------|-------------|
+| **Windsurf Cascade** (this guide) | Windsurf Editor / JetBrains with Codeium | `AGENTS.md` + `.windsurf/` |
+| **Claude Code** | Claude Code CLI, VS Code extension, desktop app | `claude-code-config/CLAUDE.md` |
 
-## Quick Start (5 Minutes)
+Both kits share the same engineering values. Choose the one matching your AI tool.
+
+**Using Claude Code?** Copy `claude-code-config/CLAUDE.md`, `claude-code-config/.claude/`, `claude-code-config/settings.json`, and `claude-code-config/.mcp.json` to your repo. Fill in the `[PROJECT-SPECIFIC]` markers in `CLAUDE.md`. See `CONFIGURATION-OVERVIEW.md` for the full Claude Code kit reference.
+
+---
+
+## Windsurf Cascade Quick Start (5 Minutes)
 
 ### 1. Install Windsurf
 
@@ -427,4 +431,4 @@ If you need help:
 
 **Remember:** Start simple, iterate based on usage, keep AGENTS.md up to date.
 
-Happy coding with Windsurf Cascade! 🚀
+Happy coding with Windsurf Cascade and Claude Code!
