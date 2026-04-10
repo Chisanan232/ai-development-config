@@ -25,13 +25,18 @@ is implemented.
 - Verify the implementation handles each scenario correctly.
 
 ### Browser and UI validation (when applicable)
-- If the ticket involves UI changes or end-to-end user flows, validate using
-  browser automation (Playwright or Selenium, whichever is configured for this project).
-- Run the existing E2E test suite first; add new scenarios for the changed flow.
+- If the ticket involves UI changes or end-to-end user flows:
+  1. If `CLAUDE_E2E_COMMAND` is set in `~/.claude/config.env`, run it first:
+     ```bash
+     ${CLAUDE_E2E_COMMAND}
+     ```
+  2. If the Playwright MCP is enabled (`.mcp.json` has `playwright` entry active),
+     use it to navigate pages, interact with elements via accessibility tree,
+     and capture page snapshots or screenshots for failure evidence.
+  3. If neither is configured: note the gap explicitly in the QA verdict
+     and describe the manual verification steps taken instead.
+- Run any existing E2E test suite before adding new scenarios.
 - Verify key user journeys in at least one supported browser.
-- Capture screenshots or traces for failures — attach them to the QA verdict.
-- If no browser automation is configured: note the gap in the QA verdict and
-  describe the manual verification steps taken instead.
 - Do not skip UI validation for frontend or full-stack tickets.
 
 ### Regression identification
