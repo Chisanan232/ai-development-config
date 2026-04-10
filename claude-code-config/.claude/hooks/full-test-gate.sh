@@ -38,7 +38,10 @@ SENTINEL_BASE="${CLAUDE_SENTINEL_DIR:-${HOME}/.claude/sentinels}"
 REPO_REMOTE=$(git remote get-url origin 2>/dev/null \
     || git remote get-url remote 2>/dev/null \
     || echo "unknown")
-REPO_KEY=$(echo "$REPO_REMOTE" | shasum -a 256 | cut -c1-12)
+
+# Portable SHA-256: shasum (macOS/BSD) with fallback to sha256sum (Linux/GNU)
+_sha256() { shasum -a 256 2>/dev/null || sha256sum; }
+REPO_KEY=$(echo "$REPO_REMOTE" | _sha256 | cut -c1-12)
 
 BRANCH=$(git branch --show-current 2>/dev/null | tr '/' '_' || echo "unknown")
 

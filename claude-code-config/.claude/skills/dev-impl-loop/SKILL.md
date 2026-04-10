@@ -114,8 +114,11 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
 14. When all checks pass: write the test sentinel (scoped to this repo+branch).
     ```bash
     SENTINEL_BASE="${CLAUDE_SENTINEL_DIR:-${HOME}/.claude/sentinels}"
-    REPO_KEY=$(git remote get-url origin 2>/dev/null | shasum -a 256 | cut -c1-12)
+    # Portable SHA-256: shasum (macOS/BSD) with fallback to sha256sum (Linux/GNU)
+    _sha256() { shasum -a 256 2>/dev/null || sha256sum; }
+    REPO_KEY=$(git remote get-url origin 2>/dev/null | _sha256 | cut -c1-12)
     BRANCH=$(git branch --show-current | tr '/' '_')
+    mkdir -p "${SENTINEL_BASE}/${REPO_KEY}/${BRANCH}"
     touch "${SENTINEL_BASE}/${REPO_KEY}/${BRANCH}/.last-test-pass"
     ```
     Record decision:
