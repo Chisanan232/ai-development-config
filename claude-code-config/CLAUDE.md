@@ -365,6 +365,7 @@ asking Claude Code to run the named procedure.
 | `bot-pr-maintainer` | Auto | When a bot PR is classified as clean or conflicted |
 | `pr-feedback-response` | Auto | When a PR has new review comments or Request Changes |
 | `post-merge-close` | Auto | After a PR is merged — close ticket, delete branch |
+| `cross-repo-coordinator` | Auto | Coordinate multi-repo ticket: sub-tickets, PR monitoring, integration gate, coordinated merge |
 | `/project-setup` | Command | Onboard a new repo — scaffold `.claude/CLAUDE.md`, gitignore, verify hooks |
 | `/workflow-resume` | Command | Resume an interrupted agent session for a ticket |
 | `/pr-readiness` | Command | Before opening a PR (full checklist run) |
@@ -690,6 +691,81 @@ bash ~/.claude/hooks/circuit-breaker-gate.sh reset <ticket>
 3. Report to `dev-lead-agent` with the failure summary and the ticket reference.
 4. Do not attempt further repairs until the engineer reviews the situation
    and resets the breaker.
+
+---
+
+## Session Memory
+
+Claude Code can persist notes for a ticket across interrupted sessions using the
+`session-memory.sh` utility. Notes survive context resets and process restarts.
+
+### When to use
+
+- When beginning work on a ticket that was previously interrupted.
+- When the circuit breaker trips — record why before stopping.
+- When a meaningful decision is made mid-session that future sessions should know.
+
+### How to use
+
+```bash
+# Surface prior notes at session start
+bash ~/.claude/hooks/session-memory.sh read "$TICKET"
+
+# Append a decision or blocker note
+bash ~/.claude/hooks/session-memory.sh append "$TICKET" "Section title" "Body text"
+
+# Clear notes after the ticket is fully closed
+bash ~/.claude/hooks/session-memory.sh clear "$TICKET"
+
+# List all tickets with active session notes
+bash ~/.claude/hooks/session-memory.sh list
+```
+
+### Notes storage
+
+Notes are stored as Markdown in `${CLAUDE_SESSION_NOTES_DIR:-~/.claude/session-notes}/<ticket>.md`.
+Each note has a frontmatter header and timestamped sections.
+
+### What session notes do not replace
+
+- **Workflow state** — which phase the skill is in. Use `workflow-state.sh`.
+- **Decision log** — why each phase decision was made. Use `decision-log.sh`.
+- **Git history** — what code was committed. Use `git log`.
+- Session notes capture **conversational context** (decisions, blockers, partial
+  work completed) that is not represented in any of the above.
+
+---
+
+## Cross-Repo Work
+
+When a feature or bugfix requires changes across multiple repositories,
+use `cross-repo-coordinator` skill instead of single-repo `task-decomposition`.
+
+### When to use
+
+A ticket requires cross-repo coordination when:
+- An API changes in one repo and a consumer must be updated in another.
+- A shared library is updated and dependent services need simultaneous bumps.
+- A new feature spans a backend repo and a frontend repo.
+
+### How it works
+
+`cross-repo-coordinator` creates per-repo sub-tickets linked to the parent,
+tracks PR status across all repos, and gates all merges until:
+1. Every per-repo sub-ticket has passed QA.
+2. Integration tests pass (`CLAUDE_INTEGRATION_TEST_COMMAND`).
+
+Only then does it coordinate the merge in dependency order and close the parent.
+
+### Parent ticket as coordination anchor
+
+Use the parent ticket ref for all cross-repo session notes:
+```bash
+bash ~/.claude/hooks/session-memory.sh append "[parent-ticket]" \
+  "Cross-repo state" "Repo A: done | Repo B: in progress"
+```
+
+This allows any agent, in any repo session, to see the full cross-repo picture.
 
 ---
 
