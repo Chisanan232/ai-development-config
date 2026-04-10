@@ -15,6 +15,13 @@ set -euo pipefail
 
 [ -f "${HOME}/.claude/config.env" ] && source "${HOME}/.claude/config.env"
 
+# Allow engineers who run tests outside the agent workflow to opt out.
+# Set CLAUDE_SKIP_TEST_GATE=1 in ~/.claude/config.env to disable this gate.
+if [[ "${CLAUDE_SKIP_TEST_GATE:-0}" == "1" ]]; then
+    echo "[HOOK] full-test-gate: skipped (CLAUDE_SKIP_TEST_GATE=1)." >&2
+    exit 0
+fi
+
 # ── Extract command ───────────────────────────────────────────────────────────
 
 COMMAND=$(echo "${CLAUDE_TOOL_INPUT:-}" | python3 -c "
@@ -56,6 +63,7 @@ if [[ ! -f "$SENTINEL_FILE" ]]; then
     echo "[HOOK] BLOCKED: full-test-gate — no passing test run recorded for this repo/branch." >&2
     echo "[HOOK] Run the full test suite. The gate clears automatically after a clean run." >&2
     echo "[HOOK] Sentinel expected at: ${SENTINEL_FILE}" >&2
+    echo "[HOOK] To skip this gate globally: set CLAUDE_SKIP_TEST_GATE=1 in ~/.claude/config.env" >&2
     exit 2
 fi
 
@@ -78,6 +86,7 @@ if [[ -z "$CHANGED_FILES" ]]; then
     if [[ "$LAST_COMMIT_MTIME" -gt "$SENTINEL_MTIME" ]]; then
         echo "[HOOK] BLOCKED: full-test-gate — commits added after last passing test run." >&2
         echo "[HOOK] Run the full test suite again before pushing." >&2
+        echo "[HOOK] To skip this gate globally: set CLAUDE_SKIP_TEST_GATE=1 in ~/.claude/config.env" >&2
         exit 2
     fi
 else
