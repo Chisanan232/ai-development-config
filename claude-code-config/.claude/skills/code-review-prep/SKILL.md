@@ -45,9 +45,12 @@ Auto-used. Claude Code invokes this skill before any PR is opened.
     If commits need squashing or reordering, do it now (before the PR is open).
 
 ## Safe-Fix Guidance
-- If a pre-commit hook fails, run `python-precommit-repair` skill.
-- If mypy fails, run `python-mypy-debugging` skill.
-- If ruff fails, run `python-ruff-fixing` skill.
+- If a pre-commit hook fails: run the language-appropriate pre-commit repair
+  skill (e.g., `python-precommit-repair` for Python projects).
+- If a type checker fails: run the language-appropriate type-checking repair
+  skill (e.g., `python-mypy-debugging` for Python/mypy).
+- If a linter fails: run the language-appropriate linter-fixing skill
+  (e.g., `python-ruff-fixing` for Python/ruff).
 - Never open a PR while any check is red.
 
 ## Validation Guidance
