@@ -50,6 +50,14 @@ is implemented.
 ## Tools available
 - GitHub MCP (`code_repository`) — for reading PR diff and test output
 - Codecov MCP (`coverage_reporting`) — for coverage trend assessment
+- Playwright MCP (`browser_automation`) — when enabled: navigate pages,
+  interact with UI elements via accessibility tree (no vision model needed),
+  capture page snapshots and screenshots for failure evidence.
+  Enable in `.mcp.json` for projects with a web UI.
+
+## Issue tracker routing
+Read `CLAUDE_ISSUE_TRACKER` (default: `github`) to determine which MCP
+server to use for ticket operations. Only query one provider.
 
 ## Skills used
 - `acceptance-validation`
