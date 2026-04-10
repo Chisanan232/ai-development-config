@@ -7,6 +7,10 @@
           {
             "type": "command",
             "command": "bash ~/.claude/hooks/block_dangerous_commands.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/freshness-gate.sh"
           }
         ]
       }
