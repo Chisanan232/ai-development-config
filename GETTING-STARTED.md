@@ -13,7 +13,7 @@ This repository provides **production-minded configuration starter kits** for AI
 
 Both kits share the same engineering values. Choose the one matching your AI tool.
 
-**Using Claude Code?** Copy `claude-code-config/CLAUDE.md`, `claude-code-config/.claude/`, `claude-code-config/settings.json`, and `claude-code-config/.mcp.json` to your repo. Fill in the `[PROJECT-SPECIFIC]` markers in `CLAUDE.md`. The kit includes a role layer (`.claude/agents/`) with four sub-agent definitions, 16 skills, and 7 enforcement hooks. See `CONFIGURATION-OVERVIEW.md` for the full Claude Code kit reference.
+**Using Claude Code?** See the **Claude Code Quick Start** section below — the kit is designed for global personal installation, not per-repo copying. The kit includes a role layer (`.claude/agents/`) with four sub-agent definitions, 16+ skills, and 7 enforcement hooks. See `CONFIGURATION-OVERVIEW.md` for the full reference.
 
 ---
 
@@ -116,6 +116,124 @@ git commit -m "chore: add Windsurf Cascade configuration"
 ```
 
 **Done!** Your repository is now configured for Windsurf Cascade.
+
+---
+
+## Claude Code Quick Start
+
+The Claude Code kit is designed as a **global personal installation** — install it
+once to `~/.claude/` and it applies across all your projects. Each project then
+gets a lightweight `.claude/CLAUDE.md` with only its project-specific overrides.
+
+### 1. Install globally
+
+```bash
+# Install Claude Code hooks, agents, skills, and settings to ~/.claude/
+cp -r claude-code-config/.claude ~/.claude
+cp claude-code-config/CLAUDE.md ~/.claude/CLAUDE.md
+cp claude-code-config/settings.json ~/.claude/settings.json
+cp claude-code-config/.mcp.json ~/.claude/.mcp.json
+
+# Make hooks executable
+chmod +x ~/.claude/hooks/*.sh
+
+# Create your personal env overrides file (optional but recommended)
+cp ~/.claude/hooks/config.env ~/.claude/config.env
+```
+
+### 2. Configure environment variables (optional)
+
+Edit `~/.claude/config.env` and uncomment any variables you want to override:
+
+```bash
+# Common overrides:
+# CLAUDE_ISSUE_TRACKER="github"       # or "clickup"
+# CLAUDE_STALE_PR_DAYS="14"           # days before a PR is considered stale
+# CLAUDE_DECISION_LOG_ENABLED="1"     # set to "0" to disable decision logging
+# CLAUDE_E2E_COMMAND="npx playwright test"  # project-specific E2E command
+```
+
+### 3. Add project-level configuration to each repository
+
+For each repo, create `.claude/CLAUDE.md` with only the project-specific sections.
+This file extends the global `~/.claude/CLAUDE.md` — you only need to define what
+differs per project:
+
+```bash
+mkdir -p /path/to/your/repo/.claude
+```
+
+Minimum project-level `.claude/CLAUDE.md` content:
+
+```markdown
+## Repository Identity
+- **Repository**: my-project
+- **Purpose**: What this repo does
+- **Primary language**: Python 3.12 / TypeScript / Go / etc.
+
+## Architecture Constraints
+- [Key design rules specific to this repo]
+
+## Package, Build, and Run Commands
+```bash
+# Install
+uv sync --all-extras
+
+# Test (impacted)
+pytest tests/unit/ -x --tb=short
+
+# Test (full suite)
+pytest tests/ --tb=short
+
+# Lint / Format / Type check
+ruff check . && ruff format --check . && mypy src/
+
+# Pre-commit
+pre-commit run --all-files
+```
+
+## Testing Tooling
+- Runner: pytest + pytest-cov (threshold: 85%)
+- Fixtures: factory_boy
+
+## Source-of-Truth Systems
+- GitHub Issues: https://github.com/org/repo/issues
+
+## Merge Strategy
+- Feature PRs: squash merge
+
+## Language-Specific Repair Skills
+- `python-mypy-debugging`, `python-ruff-fixing`, `python-precommit-repair`
+```
+
+Add `.claude/.current-ticket` to `.gitignore`:
+
+```bash
+echo ".claude/.current-ticket" >> /path/to/your/repo/.gitignore
+```
+
+### 4. Enable optional MCP servers per project (optional)
+
+Project-specific MCP servers (SonarQube, Playwright, ClickUp) can be enabled in a
+project-level `.mcp.json`. Copy the global template and remove the `"disabled": true`
+flag for the servers you want active:
+
+```bash
+cp ~/.claude/.mcp.json /path/to/your/repo/.mcp.json
+# Then edit the file — set "disabled": false (or remove the key) for relevant servers
+# and export the required credentials (SONAR_TOKEN, etc.)
+```
+
+### 5. Verify hooks are working
+
+```bash
+cd /path/to/your/repo
+# Attempt a dry-run push — hooks should fire and give feedback
+git push --dry-run 2>&1 | head -20
+```
+
+**Done!** Claude Code now applies your global behavioral rules to all projects,
+and each project's `.claude/CLAUDE.md` provides its specific overrides.
 
 ---
 

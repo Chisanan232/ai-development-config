@@ -1,64 +1,53 @@
-# CLAUDE.md
+# CLAUDE.md — Global Personal Configuration
 
-> This file is the primary behavioral context for Claude Code in this repository.
-> It contains durable repository truth, engineering policy, and workflow conventions.
+> This file is the global behavioral context for Claude Code across all projects.
+> It contains durable engineering policy, workflow conventions, and automation rules
+> that apply regardless of which repository is active.
 > Claude Code must read and apply every section before taking any action.
+>
+> **Project-specific overrides** — repository identity, architecture constraints,
+> commands, and tooling — belong in the project's own `.claude/CLAUDE.md`.
+> See the **Global vs Project Configuration** section below.
 
 ---
 
-## Repository Identity
+## Global vs Project Configuration
 
-- **Repository**: [PROJECT-SPECIFIC — replace with repo name]
-- **Purpose**: [PROJECT-SPECIFIC — one sentence describing what this repo does]
-- **Owner**: [PROJECT-SPECIFIC — team or individual]
-- **Primary language**: [PROJECT-SPECIFIC — e.g., Python 3.12]
-- **Runtime target**: [PROJECT-SPECIFIC — e.g., AWS Lambda, Docker, CLI]
-- **Dependency policy**: [PROJECT-SPECIFIC — e.g., pin all transitive deps]
+This file lives at `~/.claude/CLAUDE.md` and applies to **all projects** you work
+on with Claude Code. It contains durable behavioral rules, workflow conventions,
+and agent coordination policies that do not change from project to project.
 
----
+### What belongs in this global file
 
-## Architecture Constraints
+- Safe implementation policy
+- Commit and PR conventions
+- CI triage, push gate, and auto-merge rules
+- Workflow state, circuit breaker, and agent delegation model
+- MCP capability routing
+- Skill invocation conventions and agent coordination
 
-[REFINE FOR THIS REPO — describe the key architectural decisions that must not be
-violated. Examples below:]
+### What belongs in each project's `.claude/CLAUDE.md`
 
-- This is a monorepo. Services are in `services/`. Shared libraries are in `lib/`.
-- Database access must go through the repository layer in `src/db/`.
-- All external HTTP calls must use the client in `src/http/client.py`, never raw `requests`.
-- Configuration must be loaded from environment variables; no hardcoded values.
-- Do not introduce new top-level packages without discussion.
+Create a `.claude/CLAUDE.md` at the repository root and fill in these sections:
 
----
+| Section | Content |
+|---|---|
+| Repository Identity | Repo name, owner, primary language, runtime, dependency policy |
+| Architecture Constraints | Directory conventions, layer boundaries, design rules for this repo |
+| Package and Build Commands | Exact install, test, lint, build commands |
+| Testing Tooling | Test runner, coverage tool, fixture strategy, mocking library |
+| Type Checker | Which type checker, config file, project-specific suppression rules |
+| Linting Tooling | Linter name, formatter, pre-commit config location |
+| Source-of-Truth Systems | Issue tracker URL, wiki/docs space, Slack channel |
+| Merge Strategy | squash merge, rebase merge, or merge commit |
+| Polling Intervals | PR health check and release watch cadence for this repo |
+| Language-Specific Repair Skills | Which `<language>-*` repair skills apply (e.g., `python-ruff-fixing`) |
 
-## Package, Build, and Run Commands
+### Layering rule
 
-[PROJECT-SPECIFIC — fill in the exact commands for this repository]
-
-```bash
-# Install dependencies
-[e.g., uv sync --all-extras]
-
-# Run tests (impacted, fast)
-[e.g., pytest tests/unit/ -x --tb=short]
-
-# Run tests (full suite)
-[e.g., pytest tests/ --tb=short]
-
-# Lint
-[e.g., ruff check .]
-
-# Format
-[e.g., ruff format .]
-
-# Type check
-[e.g., mypy src/]
-
-# Pre-commit hooks
-[e.g., pre-commit run --all-files]
-
-# Build
-[e.g., docker build -t myapp:dev .]
-```
+Claude Code reads this global file first, then the project's `.claude/CLAUDE.md`.
+Project values take precedence when both define the same concept.
+These global behavioral rules apply unless the project file explicitly overrides them.
 
 ---
 
@@ -103,54 +92,44 @@ Claude Code must follow these rules on every implementation task, without except
 
 ## Testing Expectations
 
-[REFINE FOR THIS REPO]
-
 - All new features require tests. All bug fixes require a regression test.
 - Tests must be deterministic, isolated, and fast.
-- Unit tests live in `tests/unit/`. Integration tests live in `tests/integration/`.
 - Test behavior, not implementation. Tests must not assert on private internals.
-- Do not mock the database in integration tests — use a real test database.
-  [PROJECT-SPECIFIC: adjust this to match your actual test strategy]
 - Do not disable failing tests. Fix them or escalate.
 - Coverage is a metric, not the goal. Meaningful tests matter more than coverage %.
-- Minimum coverage threshold: [PROJECT-SPECIFIC — e.g., 85%]
 - Run impacted tests during iteration. Run the full suite before committing.
 
-### Test tooling
-
-- Test runner: [PROJECT-SPECIFIC — e.g., pytest]
-- Coverage tool: [PROJECT-SPECIFIC — e.g., pytest-cov]
-- Fixture strategy: [PROJECT-SPECIFIC — e.g., factory_boy for model factories]
-- Mocking: [PROJECT-SPECIFIC — e.g., unittest.mock; no third-party mock libs]
+> **Project-specific**: test runner, coverage tool, fixture strategy, mocking library,
+> test directory layout, coverage threshold, and database test strategy belong in the
+> project's `.claude/CLAUDE.md`.
 
 ---
 
 ## Type Checking Policy
 
-[LANGUAGE-SPECIFIC — this section applies to Python projects using mypy or pyright]
-
 - All public APIs must have complete type annotations.
 - All function signatures must be annotated (parameters + return type).
 - All class attributes must be annotated at the class level.
-- Use modern Python generics: `list[str]`, `dict[str, int]`, `X | Y` (Python 3.10+).
-- Do not use `Any` without a code comment explaining why.
-- Suppress type errors with `# type: ignore[error-code]` only, never bare `# type: ignore`.
-- Type hints must never change runtime behavior.
-- Run `mypy src/` before every commit.
-- Type checker config: [PROJECT-SPECIFIC — e.g., see `pyproject.toml [tool.mypy]`]
+- Do not use the language's "any" escape hatch without a code comment explaining why.
+- Suppress type errors only with the language-specific scoped suppression mechanism,
+  never suppress an entire file or block without a documented reason.
+- Type annotations must never change runtime behavior.
+- Run the configured type checker before every commit.
+
+> **Project-specific**: which type checker (mypy, pyright, tsc, etc.), config file
+> location, and language-specific annotation syntax belong in the project's `.claude/CLAUDE.md`.
 
 ---
 
 ## Linting and Formatting Policy
 
-[LANGUAGE-SPECIFIC — adjust per repo]
-
-- Linter: [PROJECT-SPECIFIC — e.g., ruff]
-- Formatter: [PROJECT-SPECIFIC — e.g., ruff format]
-- Pre-commit hooks enforce both.
 - All lint errors must be fixed before committing.
-- Do not use `# noqa` without a comment explaining the exception.
-- Config: [PROJECT-SPECIFIC — e.g., see `pyproject.toml [tool.ruff]`]
+- Do not suppress lint warnings without a comment explaining the exception.
+- Pre-commit hooks enforce both linting and formatting.
+- Config lives in the project's standard config file (see project-level CLAUDE.md).
+
+> **Project-specific**: linter name, formatter, and config file location belong in the
+> project's `.claude/CLAUDE.md`.
 
 ---
 
@@ -173,9 +152,7 @@ Every commit must be:
 [Optional footer: closes #123, refs #456]
 ```
 
-### GitEmoji conventions for this repo
-
-[ORG POLICY — adjust to your organization's emoji set]
+### GitEmoji conventions
 
 | Emoji | Scope |
 |---|---|
@@ -224,14 +201,14 @@ Every commit must be:
 1. What changed (one paragraph)
 2. Why it changed (motivation, context, issue reference)
 3. How to verify (manual steps or automated test reference)
-4. Related issues / tickets: `Closes #[PROJECT-SPECIFIC]`
+4. Related issues / tickets: `Closes #<issue-reference>`
 
 ### Review process
 
 - Address all reviewer comments before merging.
 - Do not force-push during active review.
 - CI must be green before merging.
-- Merge strategy: [PROJECT-SPECIFIC — e.g., squash merge / rebase merge]
+- Merge strategy: use the strategy configured for this repository (see project-level CLAUDE.md).
 
 ---
 
@@ -251,7 +228,7 @@ When CI fails, Claude Code must follow this sequence:
 ### What not to do
 
 - Do not merge on red CI.
-- Do not add `# noqa`, `# type: ignore`, or test `skip` markers to silence failures.
+- Do not add suppression annotations to silence failures.
 - Do not delete failing tests.
 - Do not bypass pre-commit with `--no-verify`.
 - If a failure cannot be reproduced locally, say so before proposing a fix.
@@ -263,23 +240,10 @@ the root cause: race conditions, shared state, external dependencies, timing ass
 
 ---
 
-## Source-of-Truth Systems
-
-[PROJECT-SPECIFIC — describe where canonical information lives for this project]
-
-| System | Purpose | Reference |
-|---|---|---|
-| GitHub Issues | Bug tracking and feature requests | [PROJECT-SPECIFIC] |
-| [JIRA / Linear / etc.] | Sprint planning and task tracking | [PROJECT-SPECIFIC] |
-| [Confluence / Notion / etc.] | Architecture decisions and runbooks | [PROJECT-SPECIFIC] |
-| [Slack channel] | Team discussion and incident alerts | [PROJECT-SPECIFIC] |
-
----
-
 ## MCP-Backed Systems
 
 Claude Code can use MCP-connected tools when available. Check `.mcp.json` for
-what is configured in this project. The following capability categories may be available:
+what is configured. The following capability categories may be available:
 
 | Capability | What it provides | When to use |
 |---|---|---|
@@ -290,9 +254,15 @@ what is configured in this project. The following capability categories may be a
 | `coverage_reporting` | Codecov coverage trends | Coverage regression detection |
 | `observability` | Datadog, Sentry alerts, logs | Incident triage |
 | `knowledge_search` | Confluence, Notion, internal docs | Architecture lookups |
+| `browser_automation` | Playwright UI interaction | Web UI acceptance testing (qa-agent) |
 
 When an MCP-backed capability is available for a task, prefer it over manual
 approximation. When it is not available, proceed without it and note the gap.
+
+**Active vs opt-in servers:** `fetch` and `github` are active by default.
+All other servers (`sonarqube`, `playwright`, `slack`, `clickup`, `codecov`, `datadog`)
+are disabled by default and must be enabled per-project in the project's `.mcp.json`
+or by setting their required credentials in the environment.
 
 ---
 
@@ -315,10 +285,12 @@ Claude Code may run recurring tasks using `/loop` or a scheduler. The rule is:
 | Bot PR maintenance | `bot-pr-maintainer` (via `pr-health-check`) | CI failure caused by the update itself |
 | Release pipeline observation | `release-watch` | Pipeline fails and engineer action is needed |
 
-### Polling intervals (project-configurable)
+### Default polling intervals
 
-- PR health check: every [PROJECT-SPECIFIC] minutes (e.g., every 30 min during working hours)
-- Release watch: every [PROJECT-SPECIFIC] minutes during an open release window (e.g., every 5 min)
+- PR health check: every 30 minutes during working hours
+  (override per project in `.claude/CLAUDE.md`)
+- Release watch: every 5 minutes during an open release window
+  (override per project in `.claude/CLAUDE.md`)
 
 ### How to configure
 
@@ -340,8 +312,8 @@ the skill's output indicates a decision or coordination is needed.
 
 ## Skill Invocation Guide
 
-The following skills are available for this repository. Invoke them by their
-slash command or by asking Claude Code to run the named procedure.
+The following skills are available. Invoke them by their slash command or by
+asking Claude Code to run the named procedure.
 
 | Skill | Type | When to use |
 |---|---|---|
@@ -353,9 +325,6 @@ slash command or by asking Claude Code to run the named procedure.
 | `test-design` | Auto | When designing tests for new or changed code |
 | `code-review-prep` | Auto | Before opening a PR |
 | `ci-failure-triage` | Auto | When CI is red |
-| `python-mypy-debugging` | Auto | When mypy reports type errors |
-| `python-ruff-fixing` | Auto | When ruff reports lint violations |
-| `python-precommit-repair` | Auto | When pre-commit hooks fail |
 | `acceptance-validation` | Auto | Before declaring implementation complete (qa-agent) |
 | `bot-pr-maintainer` | Auto | When a bot PR is classified as clean or conflicted |
 | `pr-feedback-response` | Auto | When a PR has new review comments or Request Changes |
@@ -366,6 +335,15 @@ slash command or by asking Claude Code to run the named procedure.
 | `/release-readiness` | Command | Before tagging a release |
 | `/release-preparation` | Command | When a release window opens |
 | `/dependency-upgrade-review` | Command | Before merging a dependency bump PR |
+
+### Language-specific repair skills
+
+Language-specific repair skills (type checker, linter, pre-commit) are configured
+per project. Add the relevant skills to the project's `.claude/CLAUDE.md` Skill
+Invocation Guide and ensure the skills directory contains matching `SKILL.md` files.
+
+Convention: `<language>-<tool>-<action>` — e.g., `python-ruff-fixing`,
+`typescript-tsc-debugging`, `go-golangci-fixing`, `rust-clippy-repair`.
 
 ---
 
@@ -389,8 +367,8 @@ If any condition is not met, do not merge. Wait, fix, or escalate.
 
 ### Merge strategy
 
-Use the merge strategy configured for this repository.
-[PROJECT-SPECIFIC — e.g., squash merge for feature PRs, rebase merge for dependency bumps]
+Use the merge strategy configured for this repository (defined in the project-level
+`.claude/CLAUDE.md` — e.g., squash merge for feature PRs, rebase merge for dependency bumps).
 
 ---
 
@@ -469,8 +447,8 @@ Before beginning any implementation task, Claude Code must verify:
    Check the most recent CI run on `main` (or the target branch) before branching.
 3. **No uncommitted state** — working tree must be clean before switching branches
    or beginning a new task.
-4. **Dependencies are installed** — run the install command if `uv.lock` / `package-lock.json`
-   (or equivalent) has changed since the last install.
+4. **Dependencies are installed** — run the install command if the lock file
+   has changed since the last install.
 5. **Pre-commit hooks are active** — confirm `.git/hooks/pre-commit` is installed.
    Run `pre-commit install` if missing.
 
@@ -529,6 +507,7 @@ and uncomment the variables you want to override.
 | `CLAUDE_CURRENT_TICKET` | _(from `.claude/.current-ticket`)_ | Active ticket ref; overrides file lookup |
 | `CLAUDE_E2E_COMMAND` | _(unset)_ | Command to run E2E tests (e.g., `npx playwright test`) |
 | `CLAUDE_SKIP_AUDIT` | `0` | Set to `1` to disable command audit logging |
+| `CLAUDE_STALE_PR_DAYS` | `14` | Days of inactivity before a PR is considered stale |
 
 ---
 

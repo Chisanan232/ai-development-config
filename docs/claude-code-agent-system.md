@@ -792,12 +792,137 @@ and uncomment the variables they need. External env vars always take precedence
 
 ---
 
-## 10. Further Reading
+## 10. Configuration Layering: Global vs Project
+
+### Why global-first?
+
+The Claude Code kit is designed to install once at `~/.claude/` and apply to all
+projects. This avoids the copy-paste problem: if the same behavioral rules and
+agent definitions live in every repo, they drift independently and become
+inconsistent over time.
+
+**The cost without global install:**
+- Repos created six months apart have different hook versions.
+- The circuit breaker threshold in repo A is 5; in repo B it's the old default 3.
+- A skill improved in one repo never propagates to others.
+- Engineers onboarding to a new repo must re-read configuration they already know.
+
+**The benefit of global install:**
+- All repos share the same behavioral contract by default.
+- Improvements to the global file apply everywhere without per-repo changes.
+- Per-repo configuration is minimal — only what genuinely differs.
+
+### Layering rule
+
+```
+~/.claude/CLAUDE.md            read first — global behavioral rules
+       ↓
+.claude/CLAUDE.md              read second — project overrides
+       ↓
+Claude Code applies the merged result, with project values taking precedence
+```
+
+Claude Code reads `CLAUDE.md` files in this order. The project file does not
+replace the global file — it extends it. Sections not present in the project file
+fall back to the global definition.
+
+### What lives at each layer
+
+```
+Global ~/.claude/CLAUDE.md                Project .claude/CLAUDE.md
+─────────────────────────────             ─────────────────────────────────────
+Global vs Project Configuration           Repository Identity
+Safe Implementation Policy                Architecture Constraints
+Testing Expectations (principles)         Package and Build Commands
+Type Checking Policy (principles)         Testing Tooling (runner, coverage %)
+Linting and Formatting (principles)       Type Checker (mypy/tsc/etc.)
+Commit Policy                             Linter (ruff/eslint/golangci/etc.)
+Pull Request Policy                       Source-of-Truth Systems
+CI/CD Triage Expectations                 Merge Strategy (squash/rebase/merge)
+MCP-Backed Systems                        Polling Intervals (per-project cadence)
+Auto-Merge Policy                         Language-Specific Repair Skills
+Bot PR Policy
+Push Gate Policy
+Development Preconditions
+Release Operations Policy
+Time-Layer Design
+Environment Variable Reference
+Agent Delegation Model
+Skill Invocation Guide
+Workflow State Management
+Circuit Breaker Policy
+```
+
+### Practical example: adding a new project
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/org/my-new-service
+
+# 2. Add project-level CLAUDE.md (30-minute task)
+mkdir -p my-new-service/.claude
+cat > my-new-service/.claude/CLAUDE.md << 'EOF'
+## Repository Identity
+- **Repository**: my-new-service
+- **Purpose**: REST API for order processing
+- **Primary language**: Go 1.22
+
+## Architecture Constraints
+- All database access through `internal/repository/`
+- HTTP handlers in `internal/handler/`; no business logic in handlers
+
+## Package, Build, and Run Commands
+```bash
+go mod download              # install
+go test ./... -count=1       # full test suite
+golangci-lint run            # lint
+go vet ./...                 # type/vet check
+```
+
+## Testing Tooling
+- Runner: `go test`; coverage: `go test -coverprofile`
+- Table-driven tests preferred; no test framework
+
+## Source-of-Truth Systems
+- GitHub Issues: https://github.com/org/my-new-service/issues
+
+## Merge Strategy
+- All PRs: rebase merge
+
+## Language-Specific Repair Skills
+- `go-golangci-fixing` — golangci-lint violations
+- `go-vet-debugging` — go vet errors
+EOF
+
+# 3. Gitignore the ticket file
+echo ".claude/.current-ticket" >> my-new-service/.gitignore
+```
+
+Claude Code now applies the global behavioral rules to this repo, with Go-specific
+commands and architecture constraints from the project file.
+
+### Design concern — global file changes affect all projects
+
+A change to `~/.claude/CLAUDE.md` applies to every project immediately. This is
+the right default for policy improvements (bug fix in circuit breaker threshold,
+improved commit message guidance), but it means global changes must be made
+carefully.
+
+**Guidance for safe global updates:**
+- Changes to behavioral principles (Safe Implementation Policy, Push Gate Policy)
+  are safe — they apply universally and improve all projects.
+- Changes that reference specific tooling or commands must not go in the global
+  file — they belong in each project's `.claude/CLAUDE.md`.
+- Test global file changes on a low-stakes project before relying on them broadly.
+
+---
+
+## 11. Further Reading
 
 | Document | What it covers |
 |---|---|
-| `CONFIGURATION-OVERVIEW.md` | Full directory structure, hook wiring, MCP map |
-| `claude-code-config/CLAUDE.md` | All 23 policy sections — the durable constitution |
+| `CONFIGURATION-OVERVIEW.md` | Full directory structure, hook wiring, MCP map, global/project split |
+| `~/.claude/CLAUDE.md` | 21-section global constitution — behavioral rules applied to all projects |
 | `claude-code-config/.claude/agents/dev-lead-agent.md` | Full dev-lead-agent responsibilities |
 | `claude-code-config/.claude/agents/dev-agent.md` | Full dev-agent responsibilities |
 | `claude-code-config/.claude/agents/qa-agent.md` | Full qa-agent responsibilities |

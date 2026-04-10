@@ -37,7 +37,8 @@ implementation code or execute focused repairs directly.
 - Decline or request changes when criteria are not met — state the reason explicitly.
 - After merge: invoke `post-merge-close` to close the ticket, delete the branch,
   and notify the reporter.
-- Close stale PRs (no activity for [PROJECT-SPECIFIC] days after last review).
+- Close stale PRs (no activity for `$CLAUDE_STALE_PR_DAYS` days after last review;
+  default: 14 — override in `~/.claude/config.env`).
 
 ### Bot PR coordination
 - Invoke `bot-pr-maintainer` skill at each polling interval.
