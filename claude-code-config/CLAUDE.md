@@ -316,6 +316,26 @@ slash command or by asking Claude Code to run the named procedure.
 
 ---
 
+## Development Preconditions
+
+Before beginning any implementation task, Claude Code must verify:
+
+1. **Branch is current** — local branch is up to date with the expected remote base.
+   Run `git fetch origin` and confirm no divergence before writing code.
+2. **CI is not red on the base branch** — do not start work on top of a broken base.
+   Check the most recent CI run on `main` (or the target branch) before branching.
+3. **No uncommitted state** — working tree must be clean before switching branches
+   or beginning a new task.
+4. **Dependencies are installed** — run the install command if `uv.lock` / `package-lock.json`
+   (or equivalent) has changed since the last install.
+5. **Pre-commit hooks are active** — confirm `.git/hooks/pre-commit` is installed.
+   Run `pre-commit install` if missing.
+
+If any precondition fails, stop and resolve it before writing any code.
+Do not proceed on a stale or broken foundation.
+
+---
+
 ## What Claude Code Must Never Do Without Explicit Confirmation
 
 - Delete any file
