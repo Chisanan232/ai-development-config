@@ -42,19 +42,23 @@ if [ "$IS_MUTATION" -eq 0 ]; then
     exit 0
 fi
 
-# Fetch remote state without modifying local refs.
-git fetch origin --quiet 2>/dev/null || {
-    echo "[HOOK] freshness-gate: Could not reach remote. Proceeding without freshness check." >&2
-    exit 0
-}
+# Resolve the tracking remote for the current branch (not hardcoded 'origin').
+REMOTE=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null \
+    | cut -d'/' -f1)
 
-# Determine the upstream tracking branch.
-UPSTREAM=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || echo "")
-
-if [ -z "$UPSTREAM" ]; then
+if [ -z "$REMOTE" ]; then
     # No upstream configured — cannot check freshness, proceed.
     exit 0
 fi
+
+# Fetch remote state without modifying local refs.
+git fetch "$REMOTE" --quiet 2>/dev/null || {
+    echo "[HOOK] freshness-gate: Could not reach remote '$REMOTE'. Proceeding without freshness check." >&2
+    exit 0
+}
+
+# Determine the full upstream tracking branch (remote/branch).
+UPSTREAM=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || echo "")
 
 BEHIND=$(git rev-list --count HEAD.."$UPSTREAM" 2>/dev/null || echo "0")
 
