@@ -24,6 +24,16 @@ is implemented.
 - Construct adversarial inputs, boundary values, and error-path scenarios.
 - Verify the implementation handles each scenario correctly.
 
+### Browser and UI validation (when applicable)
+- If the ticket involves UI changes or end-to-end user flows, validate using
+  browser automation (Playwright or Selenium, whichever is configured for this project).
+- Run the existing E2E test suite first; add new scenarios for the changed flow.
+- Verify key user journeys in at least one supported browser.
+- Capture screenshots or traces for failures — attach them to the QA verdict.
+- If no browser automation is configured: note the gap in the QA verdict and
+  describe the manual verification steps taken instead.
+- Do not skip UI validation for frontend or full-stack tickets.
+
 ### Regression identification
 - Review what existing behavior could be affected by the change.
 - Run the existing test suite and look for regressions.
