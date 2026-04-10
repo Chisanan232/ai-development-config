@@ -51,12 +51,13 @@
         "run", "--rm", "-i",
         "-e", "SLACK_BOT_TOKEN",
         "-e", "SLACK_TEAM_ID",
-        "mcp/slack"
+        "ghcr.io/chisanan232/slack-mcp-server:latest"
       ],
       "env": {
         "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
         "SLACK_TEAM_ID": "${SLACK_TEAM_ID}"
       },
+      "_note": "[VERIFY IMAGE README] Confirm required env vars and runtime args at https://github.com/chisanan232/slack-mcp-server before enabling",
       "capabilities": ["communication"],
       "disabled": true
     },
