@@ -47,7 +47,18 @@ task. Must pass before `dev-impl-loop` begins.
     Starting implementation — dev-agent session [timestamp].
     Branch: [branch-name]
     ```
-14. Write the initial workflow state file:
+14. **Bind the ticket reference** to the current session so all subsequent
+    skills can resolve it without requiring the engineer to re-state it:
+    ```bash
+    # Write to the repo-local context file (committed to .gitignore)
+    echo "[ticket-ref]" > .claude/.current-ticket
+
+    # Also export for the current shell session
+    export CLAUDE_CURRENT_TICKET="[ticket-ref]"
+    ```
+    If `CLAUDE_CURRENT_TICKET` is already set in the environment (e.g., from
+    a CI pipeline), skip the file write — the env var takes precedence.
+15. Write the initial workflow state file:
     ```bash
     bash ~/.claude/hooks/workflow-state.sh write \
       "[ticket-ref]" "dev-impl-loop" "0" "5" "in_progress"
@@ -69,6 +80,25 @@ task. Must pass before `dev-impl-loop` begins.
 - Reason (if no): [reason]
 - Next action (if no): escalate to dev-lead-agent
 ```
+
+## Ticket context resolution (for all skills)
+
+All skills that need the ticket reference resolve it in this order:
+1. `$CLAUDE_CURRENT_TICKET` environment variable (set by CI or the engineer)
+2. `.claude/.current-ticket` file in the repository root (written by this skill)
+3. Prompt the engineer if neither is set
+
+Skills should never hardcode a ticket ref. Use this pattern:
+```bash
+TICKET="${CLAUDE_CURRENT_TICKET:-$(cat .claude/.current-ticket 2>/dev/null || echo '')}"
+if [[ -z "$TICKET" ]]; then
+  echo "No active ticket context. Run ticket-pickup-check first." >&2
+  exit 1
+fi
+```
+
+Ensure `.claude/.current-ticket` is listed in `.gitignore` — it is session
+state, not source code.
 
 ## Safe-Fix Guidance
 - Never bypass the state check — implementing a "New" or "Backlog" ticket

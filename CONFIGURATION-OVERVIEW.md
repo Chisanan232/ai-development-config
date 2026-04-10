@@ -85,8 +85,8 @@ The Claude Code kit lives under `claude-code-config/` and is designed from scrat
 │  precommit-gate               ────────────────                       │
 │                               audit_log                              │
 │                               completion-contract                    │
-│                               circuit-breaker-gate                   │
 └─────────────────────────────────────────────────────────────────────┘
+      (circuit-breaker-gate is now utility-only; called by skills explicitly)
 ```
 
 ### Directory Structure
@@ -109,9 +109,11 @@ claude-code-config/
     │   ├── freshness-gate.sh            # PreToolUse[Bash]: blocks commit/push if branch is behind remote
     │   ├── full-test-gate.sh            # PreToolUse[Bash]: blocks push if tests not re-run after changes
     │   ├── precommit-gate.sh            # PreToolUse[Bash]: runs pre-commit before push, blocks on failure
-    │   ├── completion-contract.sh       # PostToolUse[Bash]: warns when failure markers appear before done
-    │   ├── workflow-state.sh            # Utility (not a hook): read/write/archive per-ticket phase state
-    │   └── circuit-breaker-gate.sh      # PostToolUse[Bash] + utility: track failures, open circuit at threshold
+    │   ├── completion-contract.sh       # PostToolUse[Bash]: exit 2 when TEST RUNNER produces failure output
+    │   ├── workflow-state.sh            # Utility: atomic read/write/archive per-ticket phase state
+    │   ├── circuit-breaker-gate.sh      # Utility: check/record-failure/record-success/reset per ticket
+    │   ├── decision-log.sh              # Utility: structured decision audit (record/tail/query)
+    │   └── config.env                   # Template: all CLAUDE_* env var overrides (copy to ~/.claude/config.env)
     └── skills/
         ├── ticket-intake/SKILL.md               # Auto-used: scan tracker, discuss requirements, mark Accepted
         ├── task-decomposition/SKILL.md          # Auto-used: ticket → sub-tickets with states and agent assignments
@@ -294,7 +296,7 @@ Seven hooks wired across two trigger points. The push gate sequence is the most 
  └───────────────────────────────────────────────────────┘
 ```
 
-Eight hooks wired across two trigger points:
+Seven hooks wired across two trigger points (circuit-breaker removed from PostToolUse; now utility-only):
 
 | Trigger | Matcher | Hook | Purpose |
 |---------|---------|------|---------|
@@ -304,8 +306,7 @@ Eight hooks wired across two trigger points:
 | `PreToolUse` | `Bash` | `precommit-gate.sh` | Run `pre-commit --all-files` before push; block on failure |
 | `PostToolUse` | `Write\|Edit` | `quality_gate.sh` | Debug detection, TODO hygiene, file size checks |
 | `PostToolUse` | `Bash` | `audit_log.sh` | Append-only JSONL audit log with rotation |
-| `PostToolUse` | `Bash` | `completion-contract.sh` | Warn if failure markers appear before task completion |
-| `PostToolUse` | `Bash` | `circuit-breaker-gate.sh` | Track consecutive failures; open circuit at threshold; escalate |
+| `PostToolUse` | `Bash` | `completion-contract.sh` | Exit 2 when a test-runner command produces failure output |
 
 ### MCP Capability Map (.mcp.json)
 

@@ -654,12 +654,150 @@ engineer, after reviewing the failure summary, should reset the breaker.
 
 ---
 
-## 9. Further Reading
+## 9. Weak Point Fixes — Design Decisions
+
+After the initial system was built, ten concrete weaknesses were identified
+and fixed. This section records the design decision behind each fix.
+
+### Fix 1 — Circuit breaker: remove passive hook mode
+
+**Problem:** The `circuit-breaker-gate.sh` PostToolUse[Bash] hook tried to
+identify the active ticket by reading the most recently modified state file.
+This was unreliable: concurrent sessions collide on the mtime ordering, and
+generic patterns like `ERROR` or `error:` fired on git messages and docker logs.
+
+**Fix:** Remove the hook registration from `settings.json`. Keep only the
+explicit utility sub-commands (`check`, `record-failure`, `record-success`,
+`reset`). Skills call these at known phase boundaries — that is the only
+reliable path. Passive detection of failures from arbitrary command output
+is too noisy to be useful.
+
+### Fix 2 — completion-contract: scope to test runners, exit 2
+
+**Problem:** `exit 0` (warn only) on all commands meant the hook was purely
+informational. It could not stop a session from proceeding after a red test run.
+Broad failure markers (`ERROR`, `error:`) produced false positives on non-test commands.
+
+**Fix:** Add a test-runner allowlist (pytest, jest, go test, cargo test, etc.).
+Only fire for commands matching the list. Change exit code to `2` (block next
+Bash call) when a test runner produces failure output. Non-test commands are
+unaffected.
+
+### Fix 3 — Sentinel: per-repo/branch scoping and git-based freshness
+
+**Problem:** A single global sentinel at `~/.claude/hooks/.last-test-pass`
+meant passing tests in repo A would clear the push gate in repo B. `find -newer`
+traversed the entire filesystem including node_modules — slow and fragile.
+
+**Fix:** Scope sentinel path to `~/.claude/sentinels/<repo-sha12>/<branch>/`
+using the git remote URL as a stable, deterministic key. Replace `find` with
+`git diff HEAD --name-only` (uses git index, O(1), git-aware) and last commit
+mtime comparison.
+
+### Fix 4 — Workflow state: atomic writes and JSON validation
+
+**Problem:** `cat > file` is not atomic — a crash mid-write produces a partial
+file with invalid JSON. The `read` sub-command returned the corrupt file without
+validation, causing `workflow-resume` to silently parse empty fields.
+
+**Fix:** Write via `mktemp` + `mv` (POSIX-atomic on the same filesystem).
+Validate JSON on read using `python3 json.load`; exit 1 with recovery
+instructions when corrupt. Recovery path: delete the file and restart from
+`ticket-pickup-check`.
+
+### Fix 5 — Ticket context: `.claude/.current-ticket` bootstrap file
+
+**Problem:** Skills referenced `[ticket-ref]` as a placeholder with no
+mechanism to propagate it from the session start. Each skill had to re-derive
+it independently.
+
+**Fix:** `ticket-pickup-check` writes the ticket ref to `.claude/.current-ticket`
+and exports `CLAUDE_CURRENT_TICKET`. All skills resolve using a three-step
+priority: env var → file → prompt. `CLAUDE_CURRENT_TICKET` takes precedence
+for CI pipelines where the ticket is known externally.
+
+### Fix 6 — Issue tracker: `CLAUDE_ISSUE_TRACKER` routing
+
+**Problem:** Both `github` and `clickup` MCP servers provided the
+`issue_tracking` capability. Skills said "use GitHub MCP or ClickUp MCP" with
+no routing rule — the agent would always pick GitHub.
+
+**Fix:** `CLAUDE_ISSUE_TRACKER=github|clickup` (default: `github`) in
+`config.env`. `_role` annotations in `.mcp.json` document the routing intent.
+Only one `issue_tracking` provider should be active at a time.
+
+### Fix 7 — Browser testing: Playwright MCP (not Puppeteer)
+
+**Problem:** `qa-agent` listed browser testing in its responsibilities but had
+no tools to execute it. The Puppeteer MCP (`@modelcontextprotocol/server-puppeteer`)
+referenced in earlier design is **deprecated and archived**.
+
+**Fix:** Add `@microsoft/playwright-mcp` (30k+ stars, active Microsoft
+maintenance) as `disabled: true` in `.mcp.json`. Default browser: Chrome.
+Uses accessibility tree rather than screenshots — no vision model required,
+LLM-friendly, deterministic. Wire into `qa-agent.md` Tools section. Enable
+per-project for web UI acceptance testing.
+
+### Fix 8 — Decision log: structured WHY record
+
+**Problem:** The audit log records what Bash commands ran. Workflow state
+records what phase was reached. Neither records why a decision was made —
+which path was chosen, what the test output showed, why the agent escalated.
+
+**Fix:** `decision-log.sh record` writes structured JSONL entries to
+`~/.claude/decisions/<date>.jsonl`. Each entry captures: ticket, agent, skill,
+phase, decision (proceed/escalate/qa-handoff/etc.), reason, and a context
+snippet. Queryable via `tail` and `query --ticket`. Integrated into all
+phase transitions in `dev-impl-loop`. Configurable via `CLAUDE_DECISION_LOG_*`
+env vars; disableable for lean/CI environments.
+
+### Fix 9 — Escalation SLA: status field and resume surfacing
+
+**Problem:** When a skill escalated ("circuit open — report to dev-lead-agent"),
+it wrote nothing to the state file. The escalation was a message in a session
+that might not be running. There was no way to see unresolved escalations when
+resuming a session.
+
+**Fix:** Skills write `status=escalated` with an `escalation_reason` to the
+workflow state file when tripping the circuit breaker. `workflow-resume` reads
+this status first and surfaces a visible block with the reason, timestamp, and
+required reset steps before allowing any resumption.
+
+### Fix 10 — post-merge-close: idempotent checkpoint
+
+**Problem:** If `post-merge-close` failed mid-way (e.g., ticket closed but
+Slack call timed out), re-running would attempt to close an already-closed
+ticket and potentially try to delete an already-deleted branch. No record of
+what had completed.
+
+**Fix:** Each step writes completion to `~/.claude/merge-closeout/<pr>.json`
+via atomic `os.replace`. Re-running reads the checkpoint and skips completed
+steps. Operations are naturally idempotent (closing a closed ticket, deleting
+a deleted branch both return benign results) so re-runs are always safe.
+Checkpoint is cleaned up on successful final step.
+
+### The config.env pattern
+
+All ten fixes introduce new configurable paths and thresholds. Rather than
+scattering `${VAR:-default}` across scripts with inconsistent defaults, a
+single `config.env` template is sourced by every hook and utility:
+
+```bash
+[ -f "${HOME}/.claude/config.env" ] && source "${HOME}/.claude/config.env"
+```
+
+Users copy `claude-code-config/.claude/hooks/config.env` to `~/.claude/config.env`
+and uncomment the variables they need. External env vars always take precedence
+(useful for CI). The full variable reference is in `CLAUDE.md §Environment Variable Reference`.
+
+---
+
+## 10. Further Reading
 
 | Document | What it covers |
 |---|---|
 | `CONFIGURATION-OVERVIEW.md` | Full directory structure, hook wiring, MCP map |
-| `claude-code-config/CLAUDE.md` | All 22 policy sections — the durable constitution |
+| `claude-code-config/CLAUDE.md` | All 23 policy sections — the durable constitution |
 | `claude-code-config/.claude/agents/dev-lead-agent.md` | Full dev-lead-agent responsibilities |
 | `claude-code-config/.claude/agents/dev-agent.md` | Full dev-agent responsibilities |
 | `claude-code-config/.claude/agents/qa-agent.md` | Full qa-agent responsibilities |

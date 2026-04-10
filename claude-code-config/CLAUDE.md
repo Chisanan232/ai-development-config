@@ -509,6 +509,29 @@ replace the automated workflow, it monitors and summarizes it.
 
 ---
 
+## Environment Variable Reference
+
+All hooks and utility scripts source `~/.claude/config.env` at startup.
+Copy `claude-code-config/.claude/hooks/config.env` to `~/.claude/config.env`
+and uncomment the variables you want to override.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `CLAUDE_WORKFLOW_STATE_DIR` | `~/.claude/workflow-state` | Per-ticket workflow state JSON files |
+| `CLAUDE_CIRCUIT_BREAKER_DIR` | `~/.claude/circuit-breaker` | Circuit breaker state files |
+| `CLAUDE_CIRCUIT_BREAKER_THRESHOLD` | `5` | Default failure count before circuit opens |
+| `CLAUDE_SENTINEL_DIR` | `~/.claude/sentinels` | Per-repo/branch test pass sentinels |
+| `CLAUDE_AUDIT_LOG_DIR` | `~/.claude/audit` | Append-only JSONL command audit log |
+| `CLAUDE_DECISION_LOG_DIR` | `~/.claude/decisions` | Structured decision log (daily JSONL) |
+| `CLAUDE_DECISION_LOG_ENABLED` | `1` | Set to `0` to disable the decision log |
+| `CLAUDE_DECISION_LOG_MAX_CONTEXT` | `500` | Max chars of context captured per entry |
+| `CLAUDE_ISSUE_TRACKER` | `github` | Which MCP to use for tickets: `github` or `clickup` |
+| `CLAUDE_CURRENT_TICKET` | _(from `.claude/.current-ticket`)_ | Active ticket ref; overrides file lookup |
+| `CLAUDE_E2E_COMMAND` | _(unset)_ | Command to run E2E tests (e.g., `npx playwright test`) |
+| `CLAUDE_SKIP_AUDIT` | `0` | Set to `1` to disable command audit logging |
+
+---
+
 ## Agent Delegation Model
 
 Claude Code may invoke specialized sub-agents for complex multi-step tasks.
@@ -570,16 +593,37 @@ can be resumed without restarting from zero.
 | `workflow` | Skill name currently executing (e.g., `dev-impl-loop`) |
 | `step` | Current step number within the skill |
 | `total_steps` | Total steps in the skill |
-| `status` | `in_progress`, `awaiting_review`, `complete`, `circuit_open` |
+| `status` | `in_progress`, `awaiting_review`, `complete`, `escalated`, `circuit_open` |
 | `timestamp` | ISO 8601 UTC time of last write |
+
+### Ticket context — how skills resolve the active ticket reference
+
+1. `$CLAUDE_CURRENT_TICKET` environment variable (set by CI or the engineer)
+2. `.claude/.current-ticket` file in the repo root (written by `ticket-pickup-check`)
+3. Prompt the engineer if neither is set
+
+`ticket-pickup-check` writes the ticket ref to both on self-assign. Skills
+must never hardcode a ticket ref — always use the resolution order above.
+Add `.claude/.current-ticket` to `.gitignore`.
+
+### Three-layer observability
+
+| Layer | Tool | Records |
+|---|---|---|
+| Command audit | `audit_log.sh` | Every Bash command run, exit code |
+| Decision log | `decision-log.sh` | Why each phase decision was made |
+| Workflow state | `workflow-state.sh` | Which phase the skill was in |
+
+Use `decision-log.sh tail` or `decision-log.sh query --ticket T` to trace
+why the system acted as it did without reconstructing from raw command logs.
 
 ### What workflow state does not replace
 
 - State tracks **which phase** was reached, not the content of changes made.
 - Git history is the authoritative record of what code was committed.
-- The audit log (`~/.claude/hooks/audit_log.sh`) records what commands ran.
-- Use `git log` and the audit log to understand *what* happened; use the state
-  file only to determine *where to resume*.
+- The audit log records what commands ran; the decision log records why.
+- Use `git log`, audit log, and decision log to understand *what* and *why*;
+  use the state file only to determine *where to resume*.
 
 ---
 
