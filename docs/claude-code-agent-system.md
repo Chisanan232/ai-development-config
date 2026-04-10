@@ -402,7 +402,113 @@ only posts a comment. There is no risk of an infinite self-repair loop.
 
 ---
 
-## 6. Further Reading
+## 6. MCP Capability Routing
+
+### Which agent uses which MCP capability?
+
+MCP servers provide capabilities. Agents and skills consume those capabilities.
+The routing table below shows which agent/skill uses which MCP capability and
+for what purpose.
+
+```
+                                    MCP Capability
+                     ┌──────────────┬──────────────────┬────────────────┬────────────────┐
+                     │code_repository│ static_analysis  │issue_tracking  │communication   │
+                     │ (GitHub)      │  (SonarQube)     │(GitHub/ClickUp)│  (Slack)       │
+┌────────────────────┼──────────────┼──────────────────┼────────────────┼────────────────┤
+│ dev-lead-agent     │ PR state,     │ quality gate     │ ticket state,  │ status updates │
+│                    │ CI checks,    │ before merge     │ decomposition  │ on decisions   │
+│                    │ merge/close   │ decision         │ output         │                │
+├────────────────────┼──────────────┼──────────────────┼────────────────┼────────────────┤
+│ dev-agent          │ PR diff,      │ code smell       │ —              │ —              │
+│                    │ branch state  │ feedback         │                │                │
+├────────────────────┼──────────────┼──────────────────┼────────────────┼────────────────┤
+│ qa-agent           │ PR diff,      │ —                │ acceptance     │ —              │
+│                    │ test output   │                  │ criteria       │                │
+├────────────────────┼──────────────┼──────────────────┼────────────────┼────────────────┤
+│ release-agent      │ tag state,    │ —                │ —              │ release status │
+│                    │ pipeline runs │                  │                │ notifications  │
+├────────────────────┼──────────────┼──────────────────┼────────────────┼────────────────┤
+│ pr-health-check    │ open PRs,     │ quality gate     │ —              │ —              │
+│ skill              │ CI status,    │ on ready PRs     │                │                │
+│                    │ review state  │                  │                │                │
+├────────────────────┼──────────────┼──────────────────┼────────────────┼────────────────┤
+│ bot-pr-maintainer  │ bot PR state, │ —                │ —              │ —              │
+│ skill              │ approve+merge │                  │                │                │
+├────────────────────┼──────────────┼──────────────────┼────────────────┼────────────────┤
+│ release-watch      │ pipeline run  │ —                │ —              │ outcome        │
+│ skill              │ status, tags  │                  │                │ summary/alert  │
+└────────────────────┴──────────────┴──────────────────┴────────────────┴────────────────┘
+
+Optional capabilities (Codecov, Datadog) not shown — used by qa-agent and
+release-watch when enabled.
+```
+
+### MCP state: always-on vs. disabled-by-default
+
+```
+ Always-on (enabled out of the box)
+ ────────────────────────────────────────────────────────────────
+ github     → core: PR management, CI state, merge operations
+ fetch      → utility: URL fetching for documentation lookups
+ sonarqube  → first-class quality gate: required before merge decisions
+
+ Disabled by default (enable with project credentials)
+ ────────────────────────────────────────────────────────────────
+ clickup    → enable when project uses ClickUp for task tracking
+              requires: CLICKUP_API_TOKEN
+              image: ghcr.io/chisanan232/clickup-mcp-server:latest
+              [VERIFY IMAGE README before enabling]
+
+ slack      → enable when team uses Slack for notifications
+              requires: SLACK_BOT_TOKEN, SLACK_TEAM_ID
+              image: ghcr.io/chisanan232/slack-mcp-server:latest
+              [VERIFY IMAGE README before enabling]
+
+ codecov    → enable when coverage trend tracking is needed for PRs
+              requires: CODECOV_TOKEN
+              used by: qa-agent (acceptance-validation), pr-readiness
+
+ datadog    → enable for production incident and log triage
+              requires: DD_API_KEY, DD_APP_KEY
+              not used by any agent directly; enables observability queries
+```
+
+### Design concern — SonarQube as always-on
+
+SonarQube is the only analysis tool promoted to always-on status in this upgrade.
+This is a deliberate choice with a trade-off:
+
+**Why always-on:**
+- Quality gate checks are a prerequisite for merge decisions, not optional audits.
+- If SonarQube is disabled, `pr-health-check` and `pr-readiness` silently skip
+  quality gate verification, creating a false impression of readiness.
+- Making it always-on makes the expectation explicit: configure it or explain why
+  it is not relevant.
+
+**Trade-off:**
+- Requires `SONAR_TOKEN` and `SONAR_HOST_URL` to be set for the MCP to start.
+- Teams that do not use SonarQube must explicitly set `"disabled": true` to
+  avoid startup errors.
+- Teams using a different static analysis tool (CodeClimate, Snyk) should replace
+  the `sonarqube` entry with their own server and update the `_role` note.
+
+### Design concern — ClickUp vs. GitHub Issues
+
+The kit provides both `github` (which covers `issue_tracking`) and `clickup`.
+Teams should use one, not both, for issue tracking. The guidance:
+
+- **If your team uses ClickUp:** Enable `clickup`, use it as the primary
+  `issue_tracking` capability. Use `github` for PR and CI operations only.
+- **If your team uses GitHub Issues:** The `github` server already covers
+  `issue_tracking`. Do not enable `clickup`.
+- **If your team uses both:** Document explicitly which system is the source
+  of truth for task state. Ambiguity between two issue trackers leads to
+  inconsistent ticket updates.
+
+---
+
+## 7. Further Reading
 
 | Document | What it covers |
 |---|---|
