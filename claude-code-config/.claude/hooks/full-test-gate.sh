@@ -1,15 +1,21 @@
 #!/usr/bin/env bash
 # full-test-gate.sh
 # Fires: PreToolUse[Bash] — before git push commands
-# Purpose: Require the full test suite to pass before any push.
-# Does not run the tests itself — it checks whether the last test run was clean.
-# If the last test run is stale or unknown, it blocks and instructs Claude Code
-# to run the full test suite first.
+# Purpose: Block push unless the full test suite has passed after the most
+# recent source file change.
+#
+# Sentinel is scoped per-repository and per-branch using the git remote URL
+# as a stable key — prevents a sentinel from one project clearing the gate
+# in another. Uses `git diff` (git index) instead of `find` for freshness
+# checking — O(1) via git, git-aware, does not traverse node_modules etc.
 #
 # IMPORTANT: This hook gates, not loops. It does not run tests itself.
-# If tests fail, delegate repair to the appropriate skill or agent.
 
 set -euo pipefail
+
+[ -f "${HOME}/.claude/config.env" ] && source "${HOME}/.claude/config.env"
+
+# ── Extract command ───────────────────────────────────────────────────────────
 
 COMMAND=$(echo "${CLAUDE_TOOL_INPUT:-}" | python3 -c "
 import sys, json
@@ -20,45 +26,64 @@ except Exception:
     print('')
 " 2>/dev/null || echo "")
 
-if [ -z "$COMMAND" ]; then
-    exit 0
-fi
+[[ -z "$COMMAND" ]] && exit 0
 
 # Only gate on push commands.
-if ! echo "$COMMAND" | grep -qiE "git push"; then
-    exit 0
-fi
+echo "$COMMAND" | grep -qiE "git push" || exit 0
 
-# Check for a sentinel file written by the test runner after a clean run.
-# The sentinel must be newer than the most recently modified source file.
-SENTINEL_FILE="${HOME}/.claude/hooks/.last-test-pass"
-SOURCE_DIR="${CLAUDE_REPO_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || echo ".")}"
+# ── Compute per-repo, per-branch sentinel path ────────────────────────────────
 
-if [ ! -f "$SENTINEL_FILE" ]; then
-    echo "[HOOK] BLOCKED: full-test-gate — no record of a passing test run found." >&2
-    echo "[HOOK] Run the full test suite before pushing. After a clean run, the gate will clear." >&2
-    echo "[HOOK] Do not bypass this gate with --no-verify." >&2
+SENTINEL_BASE="${CLAUDE_SENTINEL_DIR:-${HOME}/.claude/sentinels}"
+
+REPO_REMOTE=$(git remote get-url origin 2>/dev/null \
+    || git remote get-url remote 2>/dev/null \
+    || echo "unknown")
+REPO_KEY=$(echo "$REPO_REMOTE" | shasum -a 256 | cut -c1-12)
+
+BRANCH=$(git branch --show-current 2>/dev/null | tr '/' '_' || echo "unknown")
+
+SENTINEL_DIR="${SENTINEL_BASE}/${REPO_KEY}/${BRANCH}"
+SENTINEL_FILE="${SENTINEL_DIR}/.last-test-pass"
+
+mkdir -p "$SENTINEL_DIR"
+
+# ── Check sentinel exists ─────────────────────────────────────────────────────
+
+if [[ ! -f "$SENTINEL_FILE" ]]; then
+    echo "[HOOK] BLOCKED: full-test-gate — no passing test run recorded for this repo/branch." >&2
+    echo "[HOOK] Run the full test suite. The gate clears automatically after a clean run." >&2
+    echo "[HOOK] Sentinel expected at: ${SENTINEL_FILE}" >&2
     exit 2
 fi
 
-# Find the most recently modified source file (excluding hidden dirs, build outputs, venv).
-NEWEST_SOURCE=$(find "$SOURCE_DIR" \
-    -not -path "*/\.*" \
-    -not -path "*/node_modules/*" \
-    -not -path "*/__pycache__/*" \
-    -not -path "*/.venv/*" \
-    -not -path "*/dist/*" \
-    -not -path "*/build/*" \
-    -type f \
-    -newer "$SENTINEL_FILE" \
-    -print -quit 2>/dev/null || echo "")
+# ── Check for source changes since last sentinel (via git) ────────────────────
+# git diff checks both staged and unstaged changes against HEAD.
+# git diff HEAD --name-only shows all files modified since last commit.
+# We compare the sentinel mtime against each changed file's mtime.
 
-if [ -n "$NEWEST_SOURCE" ]; then
-    echo "[HOOK] BLOCKED: full-test-gate — source files changed since the last passing test run." >&2
-    echo "[HOOK] Changed since last test pass: $NEWEST_SOURCE" >&2
-    echo "[HOOK] Run the full test suite again before pushing." >&2
+SENTINEL_MTIME=$(stat -f "%m" "$SENTINEL_FILE" 2>/dev/null \
+    || stat -c "%Y" "$SENTINEL_FILE" 2>/dev/null \
+    || echo "0")
+
+# Get files changed since the sentinel was written.
+# Check: uncommitted changes (index + worktree) and commits after sentinel.
+CHANGED_FILES=$(git diff HEAD --name-only 2>/dev/null || echo "")
+
+if [[ -z "$CHANGED_FILES" ]]; then
+    # No uncommitted changes. Check if any new commits landed after sentinel.
+    LAST_COMMIT_MTIME=$(git log -1 --format="%ct" 2>/dev/null || echo "0")
+    if [[ "$LAST_COMMIT_MTIME" -gt "$SENTINEL_MTIME" ]]; then
+        echo "[HOOK] BLOCKED: full-test-gate — commits added after last passing test run." >&2
+        echo "[HOOK] Run the full test suite again before pushing." >&2
+        exit 2
+    fi
+else
+    echo "[HOOK] BLOCKED: full-test-gate — uncommitted source changes since last passing test run." >&2
+    echo "[HOOK] Changed files:" >&2
+    echo "$CHANGED_FILES" | head -5 | sed 's/^/[HOOK]   /' >&2
+    echo "[HOOK] Run the full test suite again, then push." >&2
     exit 2
 fi
 
-echo "[HOOK] full-test-gate: Test sentinel is current. Proceeding." >&2
+echo "[HOOK] full-test-gate: sentinel current for ${REPO_KEY}/${BRANCH}. Proceeding." >&2
 exit 0
