@@ -116,30 +116,29 @@ The Claude Code kit includes a four-agent role model for complex multi-step task
 
 ### Hook Wiring (settings.json)
 
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      { "matcher": "Bash", "hooks": [{ "type": "command", "command": ".claude/hooks/block_dangerous_commands.sh" }] }
-    ],
-    "PostToolUse": [
-      { "matcher": "Write|Edit", "hooks": [{ "type": "command", "command": ".claude/hooks/quality_gate.sh" }] },
-      { "matcher": "Bash", "hooks": [{ "type": "command", "command": ".claude/hooks/audit_log.sh" }] }
-    ]
-  }
-}
-```
+Seven hooks wired across two trigger points:
+
+| Trigger | Matcher | Hook | Purpose |
+|---------|---------|------|---------|
+| `PreToolUse` | `Bash` | `block_dangerous_commands.sh` | Block `rm -rf`, force push, `curl\|bash`, etc. |
+| `PreToolUse` | `Bash` | `freshness-gate.sh` | Block commit/push if branch is behind remote |
+| `PreToolUse` | `Bash` | `full-test-gate.sh` | Block push if tests not re-run after source changes |
+| `PreToolUse` | `Bash` | `precommit-gate.sh` | Run `pre-commit --all-files` before push; block on failure |
+| `PostToolUse` | `Write\|Edit` | `quality_gate.sh` | Debug detection, TODO hygiene, file size checks |
+| `PostToolUse` | `Bash` | `audit_log.sh` | Append-only JSONL audit log with rotation |
+| `PostToolUse` | `Bash` | `completion-contract.sh` | Warn if failure markers appear before task completion |
 
 ### MCP Capability Map (.mcp.json)
 
-| Server | Capabilities | Default State |
-|--------|-------------|---------------|
-| `github-mcp-server` | `code_repository`, `issue_tracking` | Active |
-| `fetch` | Web and URL fetching | Active |
-| `sonarqube` | `static_analysis` | Disabled |
-| `codecov` | `coverage_reporting` | Disabled |
-| `slack` | `communication` | Disabled |
-| `datadog` | `observability` | Disabled |
+| Server | Capabilities | Default State | Notes |
+|--------|-------------|---------------|-------|
+| `github` | `code_repository`, `issue_tracking` | **Active** | Core: always enabled |
+| `fetch` | `fetch` | **Active** | Utility: URL fetching |
+| `sonarqube` | `static_analysis` | **Active** | First-class quality gate; run before every PR merge |
+| `clickup` | `issue_tracking` | Disabled | Enable with `CLICKUP_API_TOKEN`; uses `chisanan232/clickup-mcp-server` |
+| `slack` | `communication` | Disabled | Enable with `SLACK_BOT_TOKEN`; uses `chisanan232/slack-mcp-server` |
+| `codecov` | `coverage_reporting` | Disabled | Optional; enable when coverage trend tracking is needed |
+| `datadog` | `observability` | Disabled | Optional; enable for incident and log triage |
 
 ---
 
