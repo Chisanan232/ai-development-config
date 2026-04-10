@@ -20,9 +20,11 @@ if [ -z "$COMMAND" ]; then
     exit 0
 fi
 
-# Only run freshness check before mutation commands.
+# Only run freshness check before remote-mutation commands.
+# git commit is intentionally excluded — committing local work while behind
+# remote is the normal workflow (commit → pull --rebase → push). Adding a
+# network fetch on every local commit adds latency and blocks offline work.
 MUTATION_PATTERNS=(
-    "git commit"
     "git push"
     "git checkout -b"
     "git switch -c"
