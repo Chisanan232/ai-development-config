@@ -23,18 +23,24 @@ session is interrupted (crash, context limit, manual stop) and needs to continue
    ```bash
    TICKET="${CLAUDE_CURRENT_TICKET:-$(cat .claude/.current-ticket 2>/dev/null || echo '[ticket-ref]')}"
    ```
-2. Read the workflow state file for the target ticket:
+2. Load and surface session notes before reading workflow state:
+   ```bash
+   bash ~/.claude/hooks/session-memory.sh read "$TICKET"
+   ```
+   Review any logged decisions or blockers — they provide context that the workflow
+   state file alone does not capture. Do not repeat steps already marked done.
+3. Read the workflow state file for the target ticket:
    ```bash
    bash ~/.claude/hooks/workflow-state.sh read "$TICKET"
    ```
    Expected output fields: `workflow`, `step`, `total_steps`, `status`, `timestamp`.
-3. If no state file exists:
+4. If no state file exists:
    - Report: "No workflow state found for $TICKET."
    - Do not guess the resume point. Ask the engineer which phase to enter.
-4. If `status` is "complete":
+5. If `status` is "complete":
    - Report: "Workflow for $TICKET is already marked complete."
    - Verify the PR was opened and ticket was closed. If not, escalate.
-5. **If `status` is "escalated"**: surface this prominently before any other step.
+6. **If `status` is "escalated"**: surface this prominently before any other step.
    ```
    ⚠️  UNRESOLVED ESCALATION — do not resume until this is addressed.
 
@@ -49,7 +55,7 @@ session is interrupted (crash, context limit, manual stop) and needs to continue
    4. Then re-run /workflow-resume $TICKET
    ```
    Do NOT proceed past this step until the engineer confirms resolution.
-6. If `status` is "circuit_open":
+7. If `status` is "circuit_open":
    - Surface the same block as above.
    - Confirm circuit breaker has been manually reset before resuming.
 

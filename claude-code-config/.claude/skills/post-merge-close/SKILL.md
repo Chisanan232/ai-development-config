@@ -140,7 +140,11 @@ Before each step, check if it was already completed:
       --reason "Ticket closed, branch deleted, reporter notified" \
       --context "merge SHA: [sha]"
     ```
-22. Clean up the checkpoint file:
+22. Clear session notes for this ticket — the work is done:
+    ```bash
+    bash ~/.claude/hooks/session-memory.sh clear "$TICKET"
+    ```
+23. Clean up the checkpoint file:
     ```bash
     rm -f "$CHECKPOINT"
     ```
