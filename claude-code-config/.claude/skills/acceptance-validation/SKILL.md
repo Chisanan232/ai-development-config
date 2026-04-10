@@ -33,16 +33,24 @@ Auto-used. `qa-agent` invokes this skill before producing a pre-merge validation
    - Concurrent or race condition scenarios (if applicable)
 8. Verify each adversarial scenario produces the correct outcome.
 
+### Phase 3b — UI and E2E validation (when applicable)
+9. If the ticket involves UI changes or end-to-end user flows, run browser validation:
+   1. If `CLAUDE_E2E_COMMAND` is set: `${CLAUDE_E2E_COMMAND}`
+   2. If Playwright MCP is enabled: navigate key user journeys via accessibility tree,
+      capture page snapshots for pass evidence and screenshots for failures.
+   3. If neither is configured: note the gap in the report; describe manual steps taken.
+   Record result in the validation report.
+
 ### Phase 4 — Regression check
-9. Identify the existing behaviors that could be affected by the change.
-10. Run the existing test suite and check for failures.
-11. If failures are found, report them — do not fix them directly.
-12. Identify behavioral regressions that the test suite does not catch.
+10. Identify the existing behaviors that could be affected by the change.
+11. Run the existing test suite and check for failures.
+12. If failures are found, report them — do not fix them directly.
+13. Identify behavioral regressions that the test suite does not catch.
 
 ### Phase 5 — Validation report
-13. Produce the structured validation report (see Output format).
-14. If any blocking items are found, report them to `dev-lead-agent` with detail.
-15. Do not declare the work ready if any criterion fails or any blocking regression exists.
+14. Produce the structured validation report (see Output format).
+15. If any blocking items are found, report them to `dev-lead-agent` with detail.
+16. Do not declare the work ready if any criterion fails or any blocking regression exists.
 
 ## Output format
 
@@ -58,6 +66,10 @@ Auto-used. `qa-agent` invokes this skill before producing a pre-merge validation
 | Scenario | Expected behavior | Actual behavior | Result |
 |---|---|---|---|
 | [scenario] | [expected] | [actual] | ✅ / ❌ |
+
+### E2E / UI validation
+- Method used: CLAUDE_E2E_COMMAND / Playwright MCP / manual / not applicable
+- Result: ✅ pass / ❌ fail / ⚠️ not verified (gap noted)
 
 ### Regression check
 - Existing tests: ✅ all pass / ❌ N failures (list below)
