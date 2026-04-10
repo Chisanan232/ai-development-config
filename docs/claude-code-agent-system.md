@@ -451,10 +451,13 @@ release-watch when enabled.
  ────────────────────────────────────────────────────────────────
  github     → core: PR management, CI state, merge operations
  fetch      → utility: URL fetching for documentation lookups
- sonarqube  → first-class quality gate: required before merge decisions
 
- Disabled by default (enable with project credentials)
+ Project-opt-in (disabled by default; enable per project with credentials)
  ────────────────────────────────────────────────────────────────
+ sonarqube  → quality gate before merge decisions
+              requires: SONAR_TOKEN, SONAR_HOST_URL
+              enable for projects with a SonarQube instance
+
  clickup    → enable when project uses ClickUp for task tracking
               requires: CLICKUP_API_TOKEN
               image: ghcr.io/chisanan232/clickup-mcp-server:latest
@@ -469,15 +472,19 @@ release-watch when enabled.
               requires: CODECOV_TOKEN
               used by: qa-agent (acceptance-validation), pr-readiness
 
+ playwright → enable for projects with a web UI (qa-agent browser testing)
+              no credentials required; Chrome by default
+
  datadog    → enable for production incident and log triage
               requires: DD_API_KEY, DD_APP_KEY
               not used by any agent directly; enables observability queries
 ```
 
-### Design concern — SonarQube as always-on
+### Design concern — SonarQube as project-opt-in
 
-SonarQube is the only analysis tool promoted to always-on status in this upgrade.
-This is a deliberate choice with a trade-off:
+SonarQube was initially promoted to always-on but was moved to project-opt-in
+because requiring `SONAR_TOKEN` and `SONAR_HOST_URL` for every project creates
+unnecessary friction when those credentials are not available. The trade-off:
 
 **Why always-on:**
 - Quality gate checks are a prerequisite for merge decisions, not optional audits.
