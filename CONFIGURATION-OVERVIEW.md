@@ -18,25 +18,40 @@ The Claude Code kit lives under `claude-code-config/` and is designed from scrat
 
 ```
 claude-code-config/
-├── CLAUDE.md                            # 13-section project truth template
+├── CLAUDE.md                            # 20-section project truth and policy constitution
 ├── settings.json                        # Hook wiring (PreToolUse / PostToolUse)
 ├── .mcp.json                            # MCP capability map
 └── .claude/
+    ├── agents/                          # Sub-agent role definitions
+    │   ├── dev-lead-agent.md            # Orchestration: decomposition, PR decisions, bot PR coordination
+    │   ├── dev-agent.md                 # Implementation: code, tests, local validation, CI repair
+    │   ├── qa-agent.md                  # Validation: acceptance criteria, adversarial testing, regressions
+    │   └── release-agent.md             # Observation: release notes, pipeline watch, outcome summary
     ├── hooks/
     │   ├── block_dangerous_commands.sh  # PreToolUse[Bash]: blocks rm -rf, force push, curl|bash, etc.
     │   ├── quality_gate.sh              # PostToolUse[Write|Edit]: debug detection, TODO hygiene, file size
-    │   └── audit_log.sh                 # PostToolUse[Bash]: append-only JSONL audit log with rotation
+    │   ├── audit_log.sh                 # PostToolUse[Bash]: append-only JSONL audit log with rotation
+    │   ├── freshness-gate.sh            # PreToolUse[Bash]: blocks commit/push if branch is behind remote
+    │   ├── full-test-gate.sh            # PreToolUse[Bash]: blocks push if tests not re-run after changes
+    │   ├── precommit-gate.sh            # PreToolUse[Bash]: runs pre-commit before push, blocks on failure
+    │   └── completion-contract.sh       # PostToolUse[Bash]: warns when failure markers appear before done
     └── skills/
-        ├── feature-implementation/SKILL.md   # Auto-used: test-first feature implementation (6 phases)
-        ├── test-design/SKILL.md              # Auto-used: behavior-first test design
-        ├── code-review-prep/SKILL.md         # Auto-used: pre-PR quality gate + description generation
-        ├── ci-failure-triage/SKILL.md        # Auto-used: 6-phase CI failure triage
-        ├── python-mypy-debugging/SKILL.md    # Auto-used: mypy error diagnosis and safe repair
-        ├── python-ruff-fixing/SKILL.md       # Auto-used: ruff violation fixing with auto-fix review
-        ├── python-precommit-repair/SKILL.md  # Auto-used: pre-commit repair without --no-verify
-        ├── pr-readiness/SKILL.md             # Command-like (/pr-readiness): full PR readiness checklist
-        ├── release-readiness/SKILL.md        # Command-like (/release-readiness): release gate checklist
-        └── dependency-upgrade-review/SKILL.md # Command-like: dependency upgrade risk classification
+        ├── feature-implementation/SKILL.md      # Auto-used: test-first feature implementation (6 phases)
+        ├── test-design/SKILL.md                 # Auto-used: behavior-first test design
+        ├── code-review-prep/SKILL.md            # Auto-used: pre-PR quality gate + description generation
+        ├── ci-failure-triage/SKILL.md           # Auto-used: 6-phase CI failure triage
+        ├── python-mypy-debugging/SKILL.md       # Auto-used: mypy error diagnosis and safe repair
+        ├── python-ruff-fixing/SKILL.md          # Auto-used: ruff violation fixing with auto-fix review
+        ├── python-precommit-repair/SKILL.md     # Auto-used: pre-commit repair without --no-verify
+        ├── task-decomposition/SKILL.md          # Auto-used: ticket → ordered task list with agent assignments
+        ├── acceptance-validation/SKILL.md       # Auto-used: acceptance criteria + adversarial validation
+        ├── bot-pr-maintainer/SKILL.md           # Auto-used: clean merge / rebase / escalate for bot PRs
+        ├── pr-readiness/SKILL.md                # Command-like (/pr-readiness): full PR readiness checklist
+        ├── pr-health-check/SKILL.md             # Command-like (/pr-health-check): classify and act on all open PRs
+        ├── release-readiness/SKILL.md           # Command-like (/release-readiness): release gate checklist
+        ├── release-preparation/SKILL.md         # Command-like (/release-preparation): notes, version config
+        ├── release-watch/SKILL.md               # Auto-used: pipeline observation and outcome summary
+        └── dependency-upgrade-review/SKILL.md   # Command-like: dependency upgrade risk classification
 ```
 
 ### Key Differences from Windsurf Cascade Kit
