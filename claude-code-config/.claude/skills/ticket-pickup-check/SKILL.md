@@ -63,6 +63,13 @@ task. Must pass before `dev-impl-loop` begins.
     bash ~/.claude/hooks/workflow-state.sh write \
       "[ticket-ref]" "dev-impl-loop" "0" "5" "in_progress"
     ```
+16. Load any prior session notes for this ticket and surface them:
+    ```bash
+    bash ~/.claude/hooks/session-memory.sh read "[ticket-ref]"
+    ```
+    If notes exist, display them to the engineer before proceeding so that
+    prior context (decisions made, blockers hit, partial work logged) is
+    visible at session start. Do not re-execute steps already recorded as done.
 
 ## Output
 

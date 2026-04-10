@@ -25,13 +25,19 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
 ## Steps
 
 ### Phase 0 — Environment verification (before the loop starts)
-1. Confirm the circuit breaker for this ticket is in "closed" state:
+1. Load and surface prior session notes:
+   ```bash
+   bash ~/.claude/hooks/session-memory.sh read "$TICKET"
+   ```
+   Review any recorded decisions, partial work, or blockers before proceeding.
+   Do not repeat steps already logged as complete in session notes.
+2. Confirm the circuit breaker for this ticket is in "closed" state:
    ```bash
    bash ~/.claude/hooks/circuit-breaker-gate.sh check "$TICKET"
    ```
-2. Run `git fetch origin && git pull --rebase` on the working branch.
-3. Confirm working directory is clean (no stale changes from a previous session).
-4. Update workflow state: step 1 of 5.
+3. Run `git fetch origin && git pull --rebase` on the working branch.
+4. Confirm working directory is clean (no stale changes from a previous session).
+5. Update workflow state: step 1 of 5.
    ```bash
    bash ~/.claude/hooks/workflow-state.sh write \
      "$TICKET" "dev-impl-loop" "1" "5" "in_progress"
@@ -200,8 +206,14 @@ When the circuit breaker trips:
      --reason "Circuit open after [N] consecutive failures" \
      --context "[last failure output summary]"
    ```
-3. Report to `dev-lead-agent` with the failure summary and ticket reference.
-4. Do not retry until the engineer resets the breaker:
+3. Write a session note so the next session can see why work was interrupted:
+   ```bash
+   bash ~/.claude/hooks/session-memory.sh append "$TICKET" \
+     "Circuit breaker tripped" \
+     "Phase [current-phase] hit [N] consecutive failures. Last error: [summary]. Awaiting engineer reset."
+   ```
+4. Report to `dev-lead-agent` with the failure summary and ticket reference.
+5. Do not retry until the engineer resets the breaker:
    `bash ~/.claude/hooks/circuit-breaker-gate.sh reset $TICKET`
 
 ## Output
