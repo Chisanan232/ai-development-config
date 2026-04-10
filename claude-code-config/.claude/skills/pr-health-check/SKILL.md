@@ -37,7 +37,7 @@ Classify each PR into one of:
 | `blocked-comments` | Unresolved blocking review comments |
 | `bot-pr-clean` | Bot author, CI green, no conflict |
 | `bot-pr-conflict` | Bot author, has lock-file conflict |
-| `stale` | No activity for [PROJECT-SPECIFIC] days after last review comment |
+| `stale` | No activity for `$CLAUDE_STALE_PR_DAYS` days after last review comment (default: 14, set in `~/.claude/config.env`) |
 | `in-progress` | Active, not yet ready for review |
 
 ### 3. Act on each class

@@ -72,13 +72,14 @@ Execution. This agent acts on concrete, decomposed tasks handed to it by
 
 ### Language-specific repair skills (configure for your stack)
 Use the skills that match the project's language and toolchain.
-Replace these with the equivalent for non-Python projects.
+See `~/.claude/skills/README.md` for all provided skills.
 
-| Category | Python example | Substitute for other languages |
-|---|---|---|
-| Type checking | `python-mypy-debugging` | e.g., `typescript-tsc-debugging`, `rust-compiler-fix` |
-| Linter fixing | `python-ruff-fixing` | e.g., `eslint-fixing`, `golangci-lint-fixing` |
-| Pre-commit repair | `python-precommit-repair` | Same skill works for any language; hook tools differ |
+| Category | Python | TypeScript / JS | Go |
+|---|---|---|---|
+| Type checking | `python-mypy-debugging` | `typescript-tsc-debugging` | `go-vet-debugging` |
+| Linter fixing | `python-ruff-fixing` | `typescript-eslint-fixing` | `go-golangci-fixing` |
+| Test failures | `python-pytest-failure-debugging` | *(create: jest-failure-debugging)* | *(create: go-test-debugging)* |
+| Pre-commit repair | `python-precommit-repair` | `node-precommit-repair` | *(create: go-precommit-repair)* |
 
 ## What this agent must not do
 - Approve or merge PRs — this is `dev-lead-agent`'s responsibility.

@@ -15,10 +15,10 @@ This directory contains all Claude Code skills for this configuration.
 
 ## Language Repair Skills Guide
 
-Language-specific repair skills fix type errors, lint violations, and pre-commit
-failures for a given language and toolchain. Only Python skills are provided
-out of the box. Create equivalents for your stack using the naming convention
-and template below.
+Language-specific repair skills fix type errors, lint violations, test failures,
+and pre-commit failures for a given language and toolchain. Python, TypeScript,
+and Go skills are provided. Add skills for other languages using the naming
+convention and template below.
 
 ### Naming convention
 
@@ -41,6 +41,7 @@ and template below.
 | `python-mypy-debugging` | mypy (type checker) | Diagnose and fix type errors |
 | `python-ruff-fixing` | ruff (linter/formatter) | Fix lint violations with auto-fix review |
 | `python-precommit-repair` | pre-commit | Repair hook failures without `--no-verify` |
+| `python-pytest-failure-debugging` | pytest | Diagnose collection, fixture, and test body failures |
 
 **TypeScript / JavaScript**
 
