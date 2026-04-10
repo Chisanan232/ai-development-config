@@ -8,8 +8,8 @@ behavior rather than implementation details.
 Auto-used. Claude Code invokes this skill when designing or reviewing tests.
 
 ## Do Not Assume
-- Do not assume the test framework configuration is default — read `pyproject.toml`
-  or equivalent config first.
+- Do not assume the test framework configuration is default — read the project's
+  test runner config first (e.g., `pyproject.toml`, `jest.config.js`, `go.mod`).
 - Do not assume that high coverage means good tests.
 - Do not assume mocking is appropriate — check CLAUDE.md for the project's mock policy.
 - Do not assume existing tests are correct templates — read them critically.
