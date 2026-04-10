@@ -12,7 +12,81 @@ A **production-minded, generic-first configuration starter kit** for structuring
 
 ### Overview
 
-The Claude Code kit lives under `claude-code-config/` and is designed from scratch for Claude Code's native configuration system. It uses shell-based hooks, `CLAUDE.md` as the project truth document, and Claude Code's Skills system.
+The Claude Code kit lives under `claude-code-config/` and is designed from scratch for Claude Code's native configuration system. It uses shell-based hooks, `CLAUDE.md` as the project truth document, Claude Code's Skills system, and a four-agent role layer for complex multi-step tasks.
+
+### Layer Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                          CLAUDE.md (20 sections)                    │
+│                   Constitution · Policy · Automation Rules          │
+│  identity · architecture · commands · safe-impl · testing ·        │
+│  commit policy · PR policy · CI triage · auto-merge · bot-PR ·     │
+│  push gate · preconditions · release ops · delegation model ·      │
+│  time-layer · skill guide · forbidden actions                       │
+└───────────────────────────────┬─────────────────────────────────────┘
+                                │ governs
+┌───────────────────────────────▼─────────────────────────────────────┐
+│                  Role Layer  (.claude/agents/)                       │
+│                                                                     │
+│  ┌─────────────────┐  delegates  ┌────────────────┐                 │
+│  │  dev-lead-agent │────────────►│   dev-agent    │                 │
+│  │  (orchestrate)  │             │  (implement)   │                 │
+│  └────────┬────────┘             └────────────────┘                 │
+│           │         delegates  ┌─────────────────┐                  │
+│           ├──────────────────►│    qa-agent      │                  │
+│           │                   │  (validate)      │                  │
+│           │                   └─────────────────┘                   │
+│           │         hands off ┌─────────────────┐                   │
+│           └─────────────────►│  release-agent   │                   │
+│                               │  (observe)       │                   │
+│                               └─────────────────┘                   │
+└───────────────────────────────┬─────────────────────────────────────┘
+                                │ invokes
+┌───────────────────────────────▼─────────────────────────────────────┐
+│                 Method Layer  (.claude/skills/)                      │
+│                                                                     │
+│  Orchestration skills         Implementation skills                  │
+│  ─────────────────            ────────────────────                   │
+│  task-decomposition           feature-implementation                 │
+│  pr-health-check              test-design                            │
+│  bot-pr-maintainer            ci-failure-triage                      │
+│                               python-mypy-debugging                  │
+│  Validation skills            python-ruff-fixing                     │
+│  ─────────────────            python-precommit-repair                │
+│  acceptance-validation                                               │
+│                               Release skills                         │
+│  Gate skills (command-like)   ─────────────                          │
+│  ───────────────────────      release-preparation                    │
+│  pr-readiness                 release-watch                          │
+│  release-readiness                                                   │
+│  dependency-upgrade-review                                           │
+└───────────────────────────────┬─────────────────────────────────────┘
+                                │ queries
+┌───────────────────────────────▼─────────────────────────────────────┐
+│                Capability Layer  (.mcp.json)                         │
+│                                                                     │
+│  Always-on                    Disabled by default                    │
+│  ──────────                   ──────────────────                     │
+│  github  (code_repository,    clickup  (issue_tracking)              │
+│           issue_tracking)     slack    (communication)               │
+│  fetch   (utility)            codecov  (coverage_reporting)          │
+│  sonarqube (static_analysis)  datadog  (observability)               │
+└───────────────────────────────┬─────────────────────────────────────┘
+                                │ enforces
+┌───────────────────────────────▼─────────────────────────────────────┐
+│            Enforcement Layer  (.claude/hooks/ + settings.json)       │
+│                                                                     │
+│  PreToolUse[Bash]             PostToolUse[Write|Edit]                │
+│  ────────────────             ──────────────────────                 │
+│  block_dangerous_commands     quality_gate                           │
+│  freshness-gate                                                      │
+│  full-test-gate               PostToolUse[Bash]                      │
+│  precommit-gate               ────────────────                       │
+│                               audit_log                              │
+│                               completion-contract                    │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ### Directory Structure
 
