@@ -13,7 +13,7 @@ This repository provides **production-minded configuration starter kits** for AI
 
 Both kits share the same engineering values. Choose the one matching your AI tool.
 
-**Using Claude Code?** Copy `claude-code-config/CLAUDE.md`, `claude-code-config/.claude/`, `claude-code-config/settings.json`, and `claude-code-config/.mcp.json` to your repo. Fill in the `[PROJECT-SPECIFIC]` markers in `CLAUDE.md`. See `CONFIGURATION-OVERVIEW.md` for the full Claude Code kit reference.
+**Using Claude Code?** Copy `claude-code-config/CLAUDE.md`, `claude-code-config/.claude/`, `claude-code-config/settings.json`, and `claude-code-config/.mcp.json` to your repo. Fill in the `[PROJECT-SPECIFIC]` markers in `CLAUDE.md`. The kit includes a role layer (`.claude/agents/`) with four sub-agent definitions, 16 skills, and 7 enforcement hooks. See `CONFIGURATION-OVERVIEW.md` for the full Claude Code kit reference.
 
 ---
 
