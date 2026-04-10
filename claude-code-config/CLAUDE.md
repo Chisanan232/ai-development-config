@@ -316,6 +316,71 @@ slash command or by asking Claude Code to run the named procedure.
 
 ---
 
+## Auto-Merge Policy
+
+A pull request may be merged automatically only when **all** of the following conditions are met:
+
+1. **Code owner approval is present** — at least one required reviewer has approved.
+2. **All required CI checks pass** — no red status checks on the PR.
+3. **No merge conflicts** — the branch merges cleanly into the base.
+4. **No unresolved blocking comments** — all `Request Changes` reviews are resolved or dismissed.
+5. **Branch is up to date** — the PR branch includes the latest commits from the base branch.
+
+If any condition is not met, do not merge. Wait, fix, or escalate.
+
+### Who may trigger auto-merge
+
+- `dev-lead-agent` is the only agent that may approve merge decisions.
+- `dev-agent` and `qa-agent` must not independently trigger merges.
+- Engineer may override and merge manually at any time.
+
+### Merge strategy
+
+Use the merge strategy configured for this repository.
+[PROJECT-SPECIFIC — e.g., squash merge for feature PRs, rebase merge for dependency bumps]
+
+---
+
+## Bot PR Policy
+
+Dependency bots (Dependabot, Renovate) and pre-commit maintenance bots produce
+automated PRs that follow a distinct handling path.
+
+### Standard bot PR handling
+
+If a bot PR meets all of the following:
+- CI is green
+- No merge conflicts
+- No scope expansion beyond the automated update
+
+Then: **approve and merge automatically**.
+
+### Bot PR with lock-file conflicts
+
+If a bot PR has lock-file conflicts (e.g., `poetry.lock`, `uv.lock`, `package-lock.json`):
+
+1. Request a rebase using the bot's supported rebase mechanism
+   (e.g., comment `@dependabot rebase` or `@renovatebot rebase`).
+2. Wait for the bot to rebase and CI to rerun.
+3. Re-evaluate the PR against the standard bot PR handling criteria.
+4. Approve and merge only when it is clean and CI is green.
+
+Do not manually resolve lock-file conflicts in bot PRs — let the bot handle it.
+
+### Bot PR with CI failure
+
+If a bot PR has CI failure after rebase:
+- Investigate the failure root cause.
+- If the failure is unrelated to the update, note it and proceed.
+- If the failure is caused by the update itself, escalate to the engineer — do not merge.
+
+### Bot PR oversight
+
+The `bot-pr-maintainer` skill and `pr-health-check` skill manage this loop.
+`dev-lead-agent` coordinates bot PR state at each polling interval.
+
+---
+
 ## Push Gate Policy
 
 Claude Code must not push to any remote branch unless all of the following are true:
