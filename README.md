@@ -23,11 +23,12 @@ The Claude Code kit lives under `claude-code-config/` and uses Claude Code's nat
 
 | Layer | File/Directory | Purpose |
 |-------|---------------|---------|
-| Project Truth | `CLAUDE.md` | 13-section template: identity, architecture, commands, policies |
-| Skills (auto-used) | `.claude/skills/` | Trigger automatically on matching tasks |
-| Skills (command-like) | `.claude/skills/` | Invoked explicitly (`/pr-readiness`, etc.) |
-| Hooks | `.claude/hooks/` + `settings.json` | Shell-based PreToolUse / PostToolUse enforcement |
-| MCP | `.mcp.json` | External capability providers |
+| Project Truth | `CLAUDE.md` | 20-section constitution: identity, architecture, commands, policies, automation rules |
+| Agents (role layer) | `.claude/agents/` | Four sub-agent roles: dev-lead, dev, qa, release |
+| Skills (auto-used) | `.claude/skills/` | Trigger automatically on matching tasks (16 skills) |
+| Skills (command-like) | `.claude/skills/` | Invoked explicitly (`/pr-readiness`, `/pr-health-check`, etc.) |
+| Hooks | `.claude/hooks/` + `settings.json` | Seven shell-based PreToolUse / PostToolUse enforcement gates |
+| MCP | `.mcp.json` | External capability providers (GitHub, SonarQube, ClickUp, Slack, Codecov, Datadog) |
 
 **Quick start for Claude Code:**
 
