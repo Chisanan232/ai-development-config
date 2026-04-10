@@ -198,7 +198,110 @@ carries the "who decides what to do with the result."
 
 ---
 
-## 4. Further Reading
+## 4. Hook Design Rationale
+
+### The gate-not-loop principle
+
+The most important constraint on the enforcement layer is:
+
+> **Hooks must gate, not repair. Repair belongs to skills and agents.**
+
+A hook that detects a failure and then tries to fix it becomes a self-repair loop.
+Self-repair loops are dangerous because:
+- They mask root causes by auto-correcting symptoms.
+- They can run indefinitely if the repair does not address the actual problem.
+- They create unpredictable state changes without engineer visibility.
+
+The four new hooks all follow the gate-not-loop pattern:
+
+```
+Hook detects condition
+        │
+        ├── condition OK → exit 0, let the command proceed
+        │
+        └── condition NOT OK → exit 2, print actionable message,
+                                name the skill or command that fixes it,
+                                do NOT attempt the fix itself
+```
+
+### Sentinel pattern (`full-test-gate.sh`)
+
+The full test gate uses a sentinel file (`~/.claude/hooks/.last-test-pass`) rather
+than running the test suite on every push attempt. This is intentional:
+
+**Why not run tests inside the hook?**
+- Running a full test suite synchronously inside a hook would block Claude Code
+  for minutes before every `git push`.
+- A hook that runs tests is also a hook that could fail tests and retry them,
+  which is exactly the self-repair loop we want to avoid.
+
+**How the sentinel pattern works:**
+
+```
+ Test suite runs (outside hook, via dev-agent or engineer)
+         │
+         ▼ all tests pass
+ touch ~/.claude/hooks/.last-test-pass
+         │
+         ▼ later: Claude Code issues git push
+         │
+         ▼ full-test-gate.sh fires
+         │
+ ┌───────┴───────────────────────────────────────────────┐
+ │  Is .last-test-pass newer than any source file?       │
+ │                                                       │
+ │  Yes → proceed. Tests were run after last change.     │
+ │  No  → block. Source changed since last clean run.    │
+ └───────────────────────────────────────────────────────┘
+```
+
+**Design concern — sentinel staleness:** The sentinel only captures the last
+passing run. If tests pass on an older commit and then new code is added without
+running tests, the sentinel will be stale and the gate will block. This is the
+correct behavior — it catches exactly the case where tests were not re-run after
+a change.
+
+**Design concern — sentinel not written:** If the test runner does not write the
+sentinel file, the gate will always block. The project's `CLAUDE.md` should
+document the sentinel write command:
+
+```bash
+# Add to the end of your test run command (or CI local script):
+touch ~/.claude/hooks/.last-test-pass
+```
+
+### Hook ordering and short-circuit behavior
+
+The PreToolUse hook chain exits on the first blocking hook (exit 2). This means:
+
+- `block_dangerous_commands.sh` runs first — catches the most obviously dangerous
+  commands before any network calls are made.
+- `freshness-gate.sh` runs second — only does a `git fetch` if the command is a
+  mutation command, so it adds minimal latency for non-mutation commands.
+- `full-test-gate.sh` runs third — only checks the sentinel file (fast file stat),
+  not the test suite itself.
+- `precommit-gate.sh` runs last — runs the full pre-commit suite, which is the
+  slowest hook. Running it last avoids running it when an earlier gate would
+  have blocked anyway.
+
+### Hook failure modes and design safeguards
+
+| Hook | If remote unreachable | If config missing | If tool missing |
+|---|---|---|---|
+| `block_dangerous_commands.sh` | N/A | Blocks on known patterns | N/A |
+| `freshness-gate.sh` | Warns, proceeds | Skips (no upstream) | Warns, proceeds |
+| `full-test-gate.sh` | N/A | Blocks (no sentinel) | N/A |
+| `precommit-gate.sh` | N/A | Skips (no config file) | Warns, proceeds |
+| `completion-contract.sh` | N/A | Warns only (exit 0) | N/A |
+
+The `freshness-gate.sh` and `precommit-gate.sh` fail open (warn, proceed) when
+their dependencies are missing, rather than blocking all pushes in
+unconfigured environments. The `full-test-gate.sh` fails closed (blocks) because
+an unknown test state is genuinely dangerous before a push.
+
+---
+
+## 5. Further Reading
 
 | Document | What it covers |
 |---|---|
