@@ -128,6 +128,10 @@ claude-code-config/
         └── dependency-upgrade-review/SKILL.md   # Command-like: dependency upgrade risk classification
 ```
 
+> **Deep dive:** For design rationale, architectural concerns, hook design principles,
+> skill-first polling diagrams, and MCP capability routing, see
+> [`docs/claude-code-agent-system.md`](docs/claude-code-agent-system.md).
+
 ### Key Differences from Windsurf Cascade Kit
 
 | Aspect | Windsurf Cascade | Claude Code |
