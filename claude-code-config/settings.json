@@ -43,10 +43,6 @@
           {
             "type": "command",
             "command": "bash ~/.claude/hooks/completion-contract.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/circuit-breaker-gate.sh"
           }
         ]
       }
