@@ -1,0 +1,79 @@
+{
+  "mcpServers": {
+    "github": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "capabilities": ["code_repository", "issue_tracking"]
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "capabilities": ["fetch"]
+    },
+    "sonarqube": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "SONAR_TOKEN",
+        "-e", "SONAR_HOST_URL",
+        "mcp/sonarqube"
+      ],
+      "env": {
+        "SONAR_TOKEN": "${SONAR_TOKEN}",
+        "SONAR_HOST_URL": "${SONAR_HOST_URL}"
+      },
+      "capabilities": ["static_analysis"],
+      "disabled": true
+    },
+    "codecov": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "CODECOV_TOKEN",
+        "mcp/codecov"
+      ],
+      "env": {
+        "CODECOV_TOKEN": "${CODECOV_TOKEN}"
+      },
+      "capabilities": ["coverage_reporting"],
+      "disabled": true
+    },
+    "slack": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "SLACK_BOT_TOKEN",
+        "-e", "SLACK_TEAM_ID",
+        "mcp/slack"
+      ],
+      "env": {
+        "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
+        "SLACK_TEAM_ID": "${SLACK_TEAM_ID}"
+      },
+      "capabilities": ["communication"],
+      "disabled": true
+    },
+    "datadog": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "DD_API_KEY",
+        "-e", "DD_APP_KEY",
+        "mcp/datadog"
+      ],
+      "env": {
+        "DD_API_KEY": "${DD_API_KEY}",
+        "DD_APP_KEY": "${DD_APP_KEY}"
+      },
+      "capabilities": ["observability"],
+      "disabled": true
+    }
+  }
+}

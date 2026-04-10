@@ -1,0 +1,329 @@
+# CLAUDE.md
+
+> This file is the primary behavioral context for Claude Code in this repository.
+> It contains durable repository truth, engineering policy, and workflow conventions.
+> Claude Code must read and apply every section before taking any action.
+
+---
+
+## Repository Identity
+
+- **Repository**: [PROJECT-SPECIFIC — replace with repo name]
+- **Purpose**: [PROJECT-SPECIFIC — one sentence describing what this repo does]
+- **Owner**: [PROJECT-SPECIFIC — team or individual]
+- **Primary language**: [PROJECT-SPECIFIC — e.g., Python 3.12]
+- **Runtime target**: [PROJECT-SPECIFIC — e.g., AWS Lambda, Docker, CLI]
+- **Dependency policy**: [PROJECT-SPECIFIC — e.g., pin all transitive deps]
+
+---
+
+## Architecture Constraints
+
+[REFINE FOR THIS REPO — describe the key architectural decisions that must not be
+violated. Examples below:]
+
+- This is a monorepo. Services are in `services/`. Shared libraries are in `lib/`.
+- Database access must go through the repository layer in `src/db/`.
+- All external HTTP calls must use the client in `src/http/client.py`, never raw `requests`.
+- Configuration must be loaded from environment variables; no hardcoded values.
+- Do not introduce new top-level packages without discussion.
+
+---
+
+## Package, Build, and Run Commands
+
+[PROJECT-SPECIFIC — fill in the exact commands for this repository]
+
+```bash
+# Install dependencies
+[e.g., uv sync --all-extras]
+
+# Run tests (impacted, fast)
+[e.g., pytest tests/unit/ -x --tb=short]
+
+# Run tests (full suite)
+[e.g., pytest tests/ --tb=short]
+
+# Lint
+[e.g., ruff check .]
+
+# Format
+[e.g., ruff format .]
+
+# Type check
+[e.g., mypy src/]
+
+# Pre-commit hooks
+[e.g., pre-commit run --all-files]
+
+# Build
+[e.g., docker build -t myapp:dev .]
+```
+
+---
+
+## Safe Implementation Policy
+
+Claude Code must follow these rules on every implementation task, without exception.
+
+### Before writing any code
+
+1. Read the relevant existing code before proposing changes.
+2. Understand what the code currently does — do not assume.
+3. Clarify ambiguous requirements before starting.
+4. Propose the smallest change that achieves the goal.
+5. State explicitly what will change, and what will not change.
+
+### During implementation
+
+6. Change only what is necessary. Do not refactor surrounding code unless asked.
+7. Do not add features, options, or abstractions beyond what was requested.
+8. Do not add comments or docstrings to code you did not change.
+9. Do not introduce new dependencies without asking first.
+10. Do not add error handling for scenarios that cannot happen.
+11. Do not add backwards-compatibility shims for code that has no callers.
+
+### Validation sequence
+
+12. After each logical unit of change, run impacted tests first.
+13. Before declaring work complete, run the full validation suite.
+14. Do not mark a task done while any test or lint check is red.
+15. If a check cannot be run locally, say so explicitly before committing.
+
+### Safety
+
+16. Never overwrite uncommitted changes without explicit user confirmation.
+17. Never delete files without explicit user confirmation.
+18. Never force-push without explicit user confirmation.
+19. Never skip pre-commit hooks (`--no-verify`) without explicit user confirmation.
+20. If you discover unexpected repository state (unfamiliar files, branches, config),
+    investigate before acting. Do not delete or overwrite unknown state.
+
+---
+
+## Testing Expectations
+
+[REFINE FOR THIS REPO]
+
+- All new features require tests. All bug fixes require a regression test.
+- Tests must be deterministic, isolated, and fast.
+- Unit tests live in `tests/unit/`. Integration tests live in `tests/integration/`.
+- Test behavior, not implementation. Tests must not assert on private internals.
+- Do not mock the database in integration tests — use a real test database.
+  [PROJECT-SPECIFIC: adjust this to match your actual test strategy]
+- Do not disable failing tests. Fix them or escalate.
+- Coverage is a metric, not the goal. Meaningful tests matter more than coverage %.
+- Minimum coverage threshold: [PROJECT-SPECIFIC — e.g., 85%]
+- Run impacted tests during iteration. Run the full suite before committing.
+
+### Test tooling
+
+- Test runner: [PROJECT-SPECIFIC — e.g., pytest]
+- Coverage tool: [PROJECT-SPECIFIC — e.g., pytest-cov]
+- Fixture strategy: [PROJECT-SPECIFIC — e.g., factory_boy for model factories]
+- Mocking: [PROJECT-SPECIFIC — e.g., unittest.mock; no third-party mock libs]
+
+---
+
+## Type Checking Policy
+
+[LANGUAGE-SPECIFIC — this section applies to Python projects using mypy or pyright]
+
+- All public APIs must have complete type annotations.
+- All function signatures must be annotated (parameters + return type).
+- All class attributes must be annotated at the class level.
+- Use modern Python generics: `list[str]`, `dict[str, int]`, `X | Y` (Python 3.10+).
+- Do not use `Any` without a code comment explaining why.
+- Suppress type errors with `# type: ignore[error-code]` only, never bare `# type: ignore`.
+- Type hints must never change runtime behavior.
+- Run `mypy src/` before every commit.
+- Type checker config: [PROJECT-SPECIFIC — e.g., see `pyproject.toml [tool.mypy]`]
+
+---
+
+## Linting and Formatting Policy
+
+[LANGUAGE-SPECIFIC — adjust per repo]
+
+- Linter: [PROJECT-SPECIFIC — e.g., ruff]
+- Formatter: [PROJECT-SPECIFIC — e.g., ruff format]
+- Pre-commit hooks enforce both.
+- All lint errors must be fixed before committing.
+- Do not use `# noqa` without a comment explaining the exception.
+- Config: [PROJECT-SPECIFIC — e.g., see `pyproject.toml [tool.ruff]`]
+
+---
+
+## Commit Policy
+
+Every commit must be:
+
+- **Atomic**: one logical concern per commit. If you need two sentences to describe it, split it.
+- **Small**: prefer many small commits over one large commit.
+- **Bisectable**: the repository must be in a working state after every commit.
+- **Descriptive**: subject line under 72 characters in imperative mood.
+
+### Commit message format
+
+```
+<emoji> <scope>: <imperative summary under 72 chars>
+
+[Optional body: what changed and why. Not how.]
+
+[Optional footer: closes #123, refs #456]
+```
+
+### GitEmoji conventions for this repo
+
+[ORG POLICY — adjust to your organization's emoji set]
+
+| Emoji | Scope |
+|---|---|
+| `✨` | New feature |
+| `🐛` | Bug fix |
+| `♻️` | Refactor |
+| `✅` | Tests |
+| `📝` | Documentation |
+| `🔧` | Configuration |
+| `🔌` | MCP / integrations |
+| `🪝` | Hooks |
+| `👨‍💻` | Skills |
+| `🧭` | Workflow skills |
+| `⬆️` | Dependency upgrade |
+| `🗑️` | Delete / remove |
+| `🚨` | Fix linting / type errors |
+
+### What not to commit
+
+- `.env` files or secrets of any kind
+- Build artifacts, compiled outputs
+- IDE-specific files not in `.gitignore`
+- Large binary files
+- Commented-out dead code
+
+---
+
+## Pull Request Policy
+
+### Before opening a PR
+
+- All tests pass locally.
+- All lint and type checks pass locally.
+- Pre-commit hooks pass.
+- CI is not blocked by an unrelated red branch.
+- You have reviewed your own diff before requesting review.
+
+### PR size and scope
+
+- Keep PRs under 500 lines when possible.
+- One concern per PR. Do not bundle unrelated changes.
+- If a change is large, break it into a sequence of stacked PRs.
+
+### PR description must include
+
+1. What changed (one paragraph)
+2. Why it changed (motivation, context, issue reference)
+3. How to verify (manual steps or automated test reference)
+4. Related issues / tickets: `Closes #[PROJECT-SPECIFIC]`
+
+### Review process
+
+- Address all reviewer comments before merging.
+- Do not force-push during active review.
+- CI must be green before merging.
+- Merge strategy: [PROJECT-SPECIFIC — e.g., squash merge / rebase merge]
+
+---
+
+## CI/CD Triage Expectations
+
+When CI fails, Claude Code must follow this sequence:
+
+1. **Identify** the failure type: test failure, lint error, type error, build error,
+   coverage drop, security alert, infrastructure issue.
+2. **Reproduce locally** before proposing a fix. Do not guess from CI logs alone.
+3. **Analyze** the root cause. Do not apply surface-level fixes.
+4. **Fix** the underlying problem. Do not bypass or suppress CI checks.
+5. **Verify** the fix resolves the failure locally.
+6. **Commit** the fix as a focused, isolated commit.
+7. **Push** and confirm CI passes.
+
+### What not to do
+
+- Do not merge on red CI.
+- Do not add `# noqa`, `# type: ignore`, or test `skip` markers to silence failures.
+- Do not delete failing tests.
+- Do not bypass pre-commit with `--no-verify`.
+- If a failure cannot be reproduced locally, say so before proposing a fix.
+
+### Flaky tests
+
+Flaky tests indicate real problems. Do not mark them as skip. Investigate
+the root cause: race conditions, shared state, external dependencies, timing assumptions.
+
+---
+
+## Source-of-Truth Systems
+
+[PROJECT-SPECIFIC — describe where canonical information lives for this project]
+
+| System | Purpose | Reference |
+|---|---|---|
+| GitHub Issues | Bug tracking and feature requests | [PROJECT-SPECIFIC] |
+| [JIRA / Linear / etc.] | Sprint planning and task tracking | [PROJECT-SPECIFIC] |
+| [Confluence / Notion / etc.] | Architecture decisions and runbooks | [PROJECT-SPECIFIC] |
+| [Slack channel] | Team discussion and incident alerts | [PROJECT-SPECIFIC] |
+
+---
+
+## MCP-Backed Systems
+
+Claude Code can use MCP-connected tools when available. Check `.mcp.json` for
+what is configured in this project. The following capability categories may be available:
+
+| Capability | What it provides | When to use |
+|---|---|---|
+| `code_repository` | Git operations, PR creation, branch management | Branching, PRs, diffs |
+| `issue_tracking` | Read/write issues and tickets | Linking commits to issues |
+| `communication` | Post to Slack, notify teams | Status updates on deploys |
+| `static_analysis` | SonarQube quality gates, code smells | Pre-PR quality checks |
+| `coverage_reporting` | Codecov coverage trends | Coverage regression detection |
+| `observability` | Datadog, Sentry alerts, logs | Incident triage |
+| `knowledge_search` | Confluence, Notion, internal docs | Architecture lookups |
+
+When an MCP-backed capability is available for a task, prefer it over manual
+approximation. When it is not available, proceed without it and note the gap.
+
+---
+
+## Skill Invocation Guide
+
+The following skills are available for this repository. Invoke them by their
+slash command or by asking Claude Code to run the named procedure.
+
+| Skill | Type | When to use |
+|---|---|---|
+| `feature-implementation` | Auto | When implementing any new feature |
+| `test-design` | Auto | When designing tests for new or changed code |
+| `code-review-prep` | Auto | Before opening a PR |
+| `ci-failure-triage` | Auto | When CI is red |
+| `python-mypy-debugging` | Auto | When mypy reports type errors |
+| `python-ruff-fixing` | Auto | When ruff reports lint violations |
+| `python-precommit-repair` | Auto | When pre-commit hooks fail |
+| `/pr-readiness` | Command | Before opening a PR (full checklist run) |
+| `/release-readiness` | Command | Before tagging a release |
+| `/dependency-upgrade-review` | Command | Before merging a dependency bump PR |
+
+---
+
+## What Claude Code Must Never Do Without Explicit Confirmation
+
+- Delete any file
+- Force-push to any branch
+- Run `git reset --hard`
+- Run `git clean -fd`
+- Drop or truncate database tables
+- Pipe remote content directly to a shell (`curl | bash`)
+- Publish packages to registries
+- Modify CI/CD pipeline definitions without review
+- Commit `.env` or any file containing credentials
