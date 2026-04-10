@@ -48,7 +48,8 @@ Auto-used. Claude Code invokes this skill whenever CI is red.
     itself is wrong. Never delete a failing test.
 12. If it is a lint violation: fix the code. Do not add `# noqa` without a specific
     code and explanation.
-13. If it is a type error: run `python-mypy-debugging` skill.
+13. If it is a type error: run the language-appropriate type-checking repair skill
+    (e.g., `python-mypy-debugging` for Python, or the equivalent for your language).
 14. If it is a build failure: investigate the dependency or import.
 15. If it is a coverage drop: add the missing tests.
 

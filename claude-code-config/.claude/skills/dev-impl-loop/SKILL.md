@@ -109,8 +109,10 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
     bash ~/.claude/hooks/workflow-state.sh write \
       "$TICKET" "dev-impl-loop" "3" "5" "in_progress"
     ```
-13. If any check fails: use `python-precommit-repair` or `python-ruff-fixing`
-    skill. Re-run after repair. Do not use `--no-verify`.
+13. If any check fails: use the language-appropriate pre-commit repair skill
+    (e.g., `python-precommit-repair` for Python) or linter-fixing skill
+    (e.g., `python-ruff-fixing` for Python/ruff). Re-run after repair.
+    Do not use `--no-verify`.
 14. When all checks pass: write the test sentinel (scoped to this repo+branch).
     ```bash
     SENTINEL_BASE="${CLAUDE_SENTINEL_DIR:-${HOME}/.claude/sentinels}"

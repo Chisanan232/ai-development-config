@@ -66,12 +66,19 @@ Execution. This agent acts on concrete, decomposed tasks handed to it by
 - `dev-impl-loop`
 - `feature-implementation`
 - `test-design`
-- `python-mypy-debugging`
-- `python-ruff-fixing`
-- `python-precommit-repair`
 - `ci-failure-triage`
 - `pr-feedback-response`
 - `workflow-resume`
+
+### Language-specific repair skills (configure for your stack)
+Use the skills that match the project's language and toolchain.
+Replace these with the equivalent for non-Python projects.
+
+| Category | Python example | Substitute for other languages |
+|---|---|---|
+| Type checking | `python-mypy-debugging` | e.g., `typescript-tsc-debugging`, `rust-compiler-fix` |
+| Linter fixing | `python-ruff-fixing` | e.g., `eslint-fixing`, `golangci-lint-fixing` |
+| Pre-commit repair | `python-precommit-repair` | Same skill works for any language; hook tools differ |
 
 ## What this agent must not do
 - Approve or merge PRs — this is `dev-lead-agent`'s responsibility.
