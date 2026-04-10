@@ -426,6 +426,70 @@ Do not proceed on a stale or broken foundation.
 
 ---
 
+## Release Operations Policy
+
+The external release workflow (automated tag creation, version bumping, changelog
+generation) handles the mechanics of releasing. Claude Code's role is **observational
+and preparatory**, not operational.
+
+### What Claude Code does during a release window
+
+1. **Identify changes** — inspect the commits in the release window (since the last tag).
+2. **Prepare release notes** — draft human-readable changelog content.
+3. **Update release intent config** — update version references or release config files
+   if the project uses them (e.g., `pyproject.toml`, `package.json`, `CHANGELOG.md`).
+4. **Observe release workflow state** — monitor the automated release CI pipeline.
+5. **Summarize outcome** — report success or failure with links to the release artifact.
+
+### What Claude Code must not do during release
+
+- Do not manually create git tags unless the automated workflow has definitively failed
+  and the engineer has explicitly requested manual intervention.
+- Do not push directly to `main` / `master` during a release window.
+- Do not modify CI/CD pipeline definitions during active release.
+- Do not publish packages to registries — this is the automated workflow's job.
+
+### Release coordination
+
+`release-agent` handles release observation. It is thin by design — it does not
+replace the automated workflow, it monitors and summarizes it.
+
+---
+
+## Agent Delegation Model
+
+Claude Code may invoke specialized sub-agents for complex multi-step tasks.
+Each agent has a defined scope. Do not conflate responsibilities across agents.
+
+### Agent roster
+
+| Agent | File | Primary scope |
+|---|---|---|
+| `dev-lead-agent` | `.claude/agents/dev-lead-agent.md` | Planning, decomposition, PR decisions, coordination |
+| `dev-agent` | `.claude/agents/dev-agent.md` | Code implementation, test writing, local validation |
+| `qa-agent` | `.claude/agents/qa-agent.md` | Acceptance validation, regression checks, edge cases |
+| `release-agent` | `.claude/agents/release-agent.md` | Release observation, notes, outcome summary |
+
+### Delegation rules
+
+1. `dev-lead-agent` is the orchestrator. It decomposes tasks, assigns work to other
+   agents, reviews PRs, and makes merge decisions.
+2. `dev-agent` implements. It must not make merge decisions or orchestration choices.
+3. `qa-agent` validates from an external tester perspective. It must not implement.
+4. `release-agent` observes and summarizes. It must not trigger releases directly.
+5. When no agent delegation is needed (simple focused tasks), Claude Code acts directly.
+6. Never collapse all responsibilities into a single agent invocation.
+
+### When to wake each agent
+
+- **`dev-lead-agent`**: when a ticket arrives, when a PR needs review, when strategic
+  re-planning is required, when coordinating bot PR maintenance.
+- **`dev-agent`**: when implementation, test writing, or focused CI repair is needed.
+- **`qa-agent`**: when acceptance criteria must be verified, before a PR is merged.
+- **`release-agent`**: when a release window opens or the release pipeline needs monitoring.
+
+---
+
 ## What Claude Code Must Never Do Without Explicit Confirmation
 
 - Delete any file
