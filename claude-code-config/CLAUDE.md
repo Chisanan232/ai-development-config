@@ -352,8 +352,13 @@ slash command or by asking Claude Code to run the named procedure.
 | `python-mypy-debugging` | Auto | When mypy reports type errors |
 | `python-ruff-fixing` | Auto | When ruff reports lint violations |
 | `python-precommit-repair` | Auto | When pre-commit hooks fail |
+| `task-decomposition` | Auto | When a ticket arrives and needs decomposition |
+| `acceptance-validation` | Auto | Before declaring implementation complete (qa-agent) |
+| `bot-pr-maintainer` | Auto | When a bot PR is classified as clean or conflicted |
 | `/pr-readiness` | Command | Before opening a PR (full checklist run) |
+| `/pr-health-check` | Command | At each polling interval to assess all open PRs |
 | `/release-readiness` | Command | Before tagging a release |
+| `/release-preparation` | Command | When a release window opens |
 | `/dependency-upgrade-review` | Command | Before merging a dependency bump PR |
 
 ---
