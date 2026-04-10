@@ -30,7 +30,7 @@
         "SONAR_HOST_URL": "${SONAR_HOST_URL}"
       },
       "capabilities": ["static_analysis"],
-      "disabled": true
+      "_role": "First-class quality gate: run before every PR merge decision via pr-health-check and pr-readiness skills"
     },
     "codecov": {
       "command": "docker",
