@@ -50,7 +50,7 @@ if pre-commit run --all-files 2>&1; then
 else
     echo "[HOOK] BLOCKED: precommit-gate — pre-commit checks failed." >&2
     echo "[HOOK] Fix the violations above before pushing." >&2
-    echo "[HOOK] Use the 'python-precommit-repair' skill if you need guided repair." >&2
+    echo "[HOOK] Use the language-appropriate pre-commit repair skill (see CLAUDE.md Skill Invocation Guide)." >&2
     echo "[HOOK] Do not bypass with --no-verify." >&2
     exit 2
 fi
