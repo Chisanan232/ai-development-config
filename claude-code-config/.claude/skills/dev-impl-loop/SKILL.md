@@ -131,8 +131,11 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
     SENTINEL_BASE="${CLAUDE_SENTINEL_DIR:-${HOME}/.claude/sentinels}"
     # Portable SHA-256: shasum (macOS/BSD) with fallback to sha256sum (Linux/GNU)
     _sha256() { shasum -a 256 2>/dev/null || sha256sum; }
-    REPO_REMOTE_URL=$(git remote get-url origin 2>/dev/null \
-        || git remote get-url remote 2>/dev/null \
+    # Resolve repo URL from whatever remote is configured — do not hardcode 'origin'.
+    # Hardcoding produces a shared 'unknown' key when the remote has a non-standard name,
+    # causing sentinel collisions between repos. Must match full-test-gate.sh exactly.
+    _FIRST_REMOTE=$(git remote 2>/dev/null | head -1 || echo "")
+    REPO_REMOTE_URL=$([ -n "$_FIRST_REMOTE" ] && git remote get-url "$_FIRST_REMOTE" 2>/dev/null \
         || echo "unknown")
     REPO_KEY=$(echo "$REPO_REMOTE_URL" | _sha256 | cut -c1-12)
     BRANCH=$(git branch --show-current | tr '/' '_')

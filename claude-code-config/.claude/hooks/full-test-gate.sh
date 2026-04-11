@@ -42,8 +42,11 @@ echo "$COMMAND" | grep -qiE "git push" || exit 0
 
 SENTINEL_BASE="${CLAUDE_SENTINEL_DIR:-${HOME}/.claude/sentinels}"
 
-REPO_REMOTE=$(git remote get-url origin 2>/dev/null \
-    || git remote get-url remote 2>/dev/null \
+# Resolve the repo URL using whatever remote is configured — do not hardcode
+# 'origin'. If two repos both fall back to 'origin' and neither has one, they
+# would share a sentinel key and clear each other's push gate.
+_FIRST_REMOTE=$(git remote 2>/dev/null | head -1 || echo "")
+REPO_REMOTE=$([ -n "$_FIRST_REMOTE" ] && git remote get-url "$_FIRST_REMOTE" 2>/dev/null \
     || echo "unknown")
 
 # Portable SHA-256: shasum (macOS/BSD) with fallback to sha256sum (Linux/GNU)
