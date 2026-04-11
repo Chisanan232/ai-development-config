@@ -194,7 +194,7 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
     c. Link the PR to the ticket.
 19. If qa-agent verdict is "blocked":
     a. Read the blocking items from the verdict output.
-    b. Re-enter Phase 1 ralph loop to address each item.
+    b. Re-enter the Phase 1 implementation loop to address each item.
        Circuit breaker applies — max attempts before escalating.
     c. After fixes: re-run Phase 2 (full suite) and Phase 3 (pre-commit)
        before signaling QA again.
