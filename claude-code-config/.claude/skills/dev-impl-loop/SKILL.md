@@ -1,7 +1,7 @@
 # SKILL.md — dev-impl-loop
 
 ## Purpose
-Drive a single ticket through the full implementation cycle using a ralph loop:
+Drive a single ticket through the full implementation cycle:
 implement → run relative tests → iterate until green → full test suite →
 pre-commit → explicit QA handoff. Provides a defined entry point, exit
 condition, and circuit breaker threshold for every iteration phase.
@@ -55,8 +55,9 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
      --reason "Circuit closed, branch current, working tree clean"
    ```
 
-### Phase 1 — Implementation ralph loop (relative tests)
-5. Start `/ralph-loop` for the implementation cycle.
+### Phase 1 — Implementation loop (relative tests)
+5. Begin iterative implementation: write code, run relative tests, fix failures,
+   repeat until all acceptance criteria are covered and relative tests are green.
 6. Within each loop iteration:
    a. Implement the next logical unit of work for this ticket.
       Follow all conventions in CLAUDE.md (naming, structure, type hints).
@@ -79,7 +80,8 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
       ```
 7. Continue iterations until all ticket acceptance criteria are implemented
    and relative tests are green.
-8. Stop `/ralph-loop`. Do not proceed until the loop exits cleanly.
+8. Exit the implementation loop. Do not proceed to Phase 2 until all relative
+   tests are green and all acceptance criteria are covered.
 
 ### Phase 2 — Full test suite
 9. Run the complete test suite (all modules, not just relative).
@@ -98,7 +100,7 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
          --reason "Pre-existing test failure — not caused by this change" \
          --context "[test name and failure output]"
        ```
-    c. Failure in changed code → one ralph loop iteration to fix.
+    c. Failure in changed code → one fix iteration to resolve.
        Record failure and check circuit breaker:
        ```bash
        bash ~/.claude/hooks/circuit-breaker-gate.sh record-failure "$TICKET" 3
@@ -231,5 +233,5 @@ On successful completion: PR opened, linked to ticket, workflow state = complete
 - Do not skip Phase 2 (full suite) even if Phase 1 relative tests are green.
 - Do not open the PR before qa-agent produces a "ready" verdict.
 - Do not mark work complete while the circuit breaker is open.
-- If the ralph loop exits without all acceptance criteria met, that is a
+- If the implementation loop exits without all acceptance criteria met, that is a
   decomposition problem — escalate to `dev-lead-agent`.
