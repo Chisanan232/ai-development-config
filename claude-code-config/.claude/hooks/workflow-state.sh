@@ -69,17 +69,24 @@ if [[ "$cmd" == "write" ]]; then
     timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
     # Atomic write: write to temp file, then mv (POSIX-atomic on same filesystem)
+    # Shell-to-Python boundary: pass ticket, workflow, and status via environment
+    # variables — never interpolate free-text values into a JSON heredoc directly.
+    # A ticket ref containing '"' would produce malformed JSON that _validate_json
+    # then rejects on every subsequent read, silently breaking all workflow state
+    # for that ticket. step/total are caller-supplied integers; safe to inline.
     tmp="$(mktemp "${STATE_FILE}.XXXXXX")"
-    cat > "$tmp" <<JSON
-{
-  "ticket": "${ticket}",
-  "workflow": "${workflow}",
-  "step": "${step}",
-  "total_steps": "${total}",
-  "status": "${status}",
-  "timestamp": "${timestamp}"
-}
-JSON
+    _WS_TICKET="$ticket" _WS_WORKFLOW="$workflow" _WS_STATUS="$status" \
+    _WS_TIMESTAMP="$timestamp" python3 - > "$tmp" <<PYEOF
+import json, os
+print(json.dumps({
+    "ticket":      os.environ["_WS_TICKET"],
+    "workflow":    os.environ["_WS_WORKFLOW"],
+    "step":        "${step}",
+    "total_steps": "${total}",
+    "status":      os.environ["_WS_STATUS"],
+    "timestamp":   os.environ["_WS_TIMESTAMP"],
+}, indent=2))
+PYEOF
     mv "$tmp" "$STATE_FILE"
 
     echo "[workflow-state] wrote: ${ticket} | ${workflow} | step ${step}/${total} | ${status} | ${timestamp}"
