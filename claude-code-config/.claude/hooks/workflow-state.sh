@@ -69,20 +69,21 @@ if [[ "$cmd" == "write" ]]; then
     timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
     # Atomic write: write to temp file, then mv (POSIX-atomic on same filesystem)
-    # Shell-to-Python boundary: pass ticket, workflow, and status via environment
-    # variables — never interpolate free-text values into a JSON heredoc directly.
-    # A ticket ref containing '"' would produce malformed JSON that _validate_json
-    # then rejects on every subsequent read, silently breaking all workflow state
-    # for that ticket. step/total are caller-supplied integers; safe to inline.
+    # Shell-to-Python boundary: pass ALL values via environment variables and use
+    # a quoted heredoc (<<'PYEOF') so that no shell interpolation occurs inside the
+    # Python source. step/total are caller-supplied and could theoretically contain
+    # special characters in future callers; passing via env vars is consistent with
+    # the codebase convention and eliminates the injection surface entirely.
     tmp="$(mktemp "${STATE_FILE}.XXXXXX")"
-    _WS_TICKET="$ticket" _WS_WORKFLOW="$workflow" _WS_STATUS="$status" \
-    _WS_TIMESTAMP="$timestamp" python3 - > "$tmp" <<PYEOF
+    _WS_TICKET="$ticket" _WS_WORKFLOW="$workflow" _WS_STEP="$step" \
+    _WS_TOTAL="$total" _WS_STATUS="$status" _WS_TIMESTAMP="$timestamp" \
+    python3 - > "$tmp" <<'PYEOF'
 import json, os
 print(json.dumps({
     "ticket":      os.environ["_WS_TICKET"],
     "workflow":    os.environ["_WS_WORKFLOW"],
-    "step":        "${step}",
-    "total_steps": "${total}",
+    "step":        os.environ["_WS_STEP"],
+    "total_steps": os.environ["_WS_TOTAL"],
     "status":      os.environ["_WS_STATUS"],
     "timestamp":   os.environ["_WS_TIMESTAMP"],
 }, indent=2))
