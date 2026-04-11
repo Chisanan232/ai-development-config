@@ -5,7 +5,8 @@
 # Runs 'pre-commit run --all-files' and blocks if any check fails.
 # If pre-commit is not installed, warns but does not block.
 #
-# IMPORTANT: If checks fail, delegate repair to python-precommit-repair skill.
+# IMPORTANT: If checks fail, delegate repair to the language-appropriate
+# pre-commit repair skill (e.g., python-precommit-repair for Python projects).
 # Do not enter a self-repair loop from within this hook.
 
 set -euo pipefail

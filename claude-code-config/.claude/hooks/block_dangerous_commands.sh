@@ -32,8 +32,6 @@ BLOCKED_PATTERNS=(
     "DROP TABLE"
     "DROP DATABASE"
     "TRUNCATE TABLE"
-    "git push --force"
-    "git push -f"
     "git reset --hard"
     "git clean -fd"
     "git clean -f"
@@ -50,6 +48,20 @@ for pattern in "${BLOCKED_PATTERNS[@]}"; do
         exit 2
     fi
 done
+
+# Force-push: block --force and -f, but explicitly allow --force-with-lease
+# (--force-with-lease is the safe alternative and must not be blocked).
+# The general pattern "git push --force" would incorrectly match --force-with-lease
+# as a substring, so this check is handled separately.
+if echo "$COMMAND" | grep -qiE "git push"; then
+    if echo "$COMMAND" | grep -qiE "git push -(f|-force)( |$)" \
+       && ! echo "$COMMAND" | grep -q "force-with-lease"; then
+        echo "[HOOK] BLOCKED: git push --force / -f is forbidden without explicit confirmation." >&2
+        echo "[HOOK] If a force-push is truly needed, use --force-with-lease for safety." >&2
+        echo "[HOOK] Command: $COMMAND" >&2
+        exit 2
+    fi
+fi
 
 # --- Confirmation-required patterns (warn, do not block) ---
 
