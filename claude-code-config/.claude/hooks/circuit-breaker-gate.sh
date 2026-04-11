@@ -51,17 +51,20 @@ _write_state() {
   timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   state_file="${BREAKER_DIR}/${ticket}.json"
   tmp="$(mktemp "${state_file}.XXXXXX")"
-  # Shell-to-Python boundary: pass ticket and timestamp via environment
-  # variables so that a ticket name containing '"' or a newline does not
-  # produce malformed JSON. failures/state/threshold are numerics or
-  # internal enum values — safe to interpolate directly.
-  _CB_TICKET="$ticket" _CB_TIMESTAMP="$timestamp" python3 - > "$tmp" <<PYEOF
+  # Shell-to-Python boundary: pass ALL values via environment variables and
+  # use a quoted heredoc (<<'PYEOF') so that no shell interpolation occurs
+  # inside the Python source. failures/threshold are integers but may come
+  # from user-supplied ticket context in future callers; passing them via
+  # env vars is safer and consistent with the codebase convention.
+  _CB_TICKET="$ticket" _CB_TIMESTAMP="$timestamp" \
+  _CB_STATE="$state" _CB_FAILURES="$failures" _CB_THRESHOLD="$threshold" \
+  python3 - > "$tmp" <<'PYEOF'
 import json, os
 print(json.dumps({
     "ticket":               os.environ["_CB_TICKET"],
-    "consecutive_failures": ${failures},
-    "state":                "${state}",
-    "threshold":            ${threshold},
+    "consecutive_failures": int(os.environ["_CB_FAILURES"]),
+    "state":                os.environ["_CB_STATE"],
+    "threshold":            int(os.environ["_CB_THRESHOLD"]),
     "timestamp":            os.environ["_CB_TIMESTAMP"],
 }, indent=2))
 PYEOF

@@ -18,35 +18,57 @@ Auto-used. Invoked by `dev-lead-agent` immediately after a PR merge is confirmed
 ## Checkpoint pattern
 
 All steps write their completion to a per-PR checkpoint file, making every
-operation safe to re-run after a partial failure:
+operation safe to re-run after a partial failure.
+
+**Important**: `PR_NUMBER` is extracted in Phase 1 step 3. Initialise these
+variables and define the helper functions AFTER step 3, once `PR_NUMBER` is
+known:
 
 ```bash
 TICKET="${CLAUDE_CURRENT_TICKET:-$(cat .claude/.current-ticket 2>/dev/null || echo '')}"
 CHECKPOINT_DIR="${HOME}/.claude/merge-closeout"
 mkdir -p "$CHECKPOINT_DIR"
-CHECKPOINT="${CHECKPOINT_DIR}/${PR_NUMBER}.json"
+CHECKPOINT="${CHECKPOINT_DIR}/${PR_NUMBER}.json"   # set AFTER PR_NUMBER is known
 ```
 
-Read the checkpoint at the start:
-```bash
-# Returns field value or empty if checkpoint doesn't exist / field not set
-_checkpoint_get() { python3 -c "
-import json, sys
-try: print(json.load(open('${CHECKPOINT}'))['$1'])
-except: print('')
-" 2>/dev/null || echo ""; }
+Define checkpoint helpers (shell-to-Python boundary: pass file path and all
+values via environment variables — never interpolate them into Python source
+strings, as a file path or value containing `'` would break Python syntax):
 
-_checkpoint_set() { python3 -c "
+```bash
+# Returns field value or empty string if checkpoint does not exist or field unset.
+_checkpoint_get() {
+  local field="$1"
+  _CP_FILE="$CHECKPOINT" _CP_FIELD="$field" python3 - <<'PYEOF' 2>/dev/null || echo ""
 import json, os
-p='${CHECKPOINT}'
-d={}
-try: d=json.load(open(p))
-except: pass
-d['$1']='$2'
-tmp=p+'.tmp'
-json.dump(d,open(tmp,'w'))
-os.replace(tmp,p)
-" 2>/dev/null; }
+try:
+    print(json.load(open(os.environ["_CP_FILE"])).get(os.environ["_CP_FIELD"], ""))
+except Exception:
+    print("")
+PYEOF
+}
+
+# Writes key=value into the checkpoint JSON atomically.
+_checkpoint_set() {
+  local key="$1" value="$2"
+  _CP_FILE="$CHECKPOINT" _CP_KEY="$key" _CP_VALUE="$value" python3 - <<'PYEOF' 2>/dev/null
+import json, os
+p   = os.environ["_CP_FILE"]
+key = os.environ["_CP_KEY"]
+val = os.environ["_CP_VALUE"]
+d = {}
+try:
+    with open(p) as fh:
+        d = json.load(fh)
+except Exception:
+    pass
+d[key] = val
+tmp = p + ".tmp"
+with open(tmp, "w") as fh:
+    json.dump(d, fh)
+os.replace(tmp, p)
+PYEOF
+}
 ```
 
 Before each step, check if it was already completed:
@@ -60,6 +82,8 @@ Before each step, check if it was already completed:
 1. Fetch the PR's current state using `code_repository` MCP.
 2. Confirm the PR status is "merged" (not just "closed").
 3. Record: PR number, merge commit SHA, merged-at timestamp, base branch.
+   Set `PR_NUMBER`, `MERGE_SHA`, `MERGED_AT` from the MCP response.
+   **Then** initialise the checkpoint path and helper functions (defined above).
 4. If the PR was closed without merging: stop. Do not transition the ticket or
    delete the branch. Report the closure reason to `dev-lead-agent`.
 5. Initialise checkpoint:
