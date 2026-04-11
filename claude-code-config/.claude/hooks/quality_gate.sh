@@ -59,8 +59,10 @@ fi
 # --- Check 2: TODO without issue reference ---
 # Note: ERE (grep -E) does not support lookaheads on macOS or GNU grep,
 # so the negative-lookahead pattern silently matches nothing. Use a pipeline instead.
-if grep -n 'TODO' "$FILE_PATH" 2>/dev/null | grep -v '#[0-9]' | head -5 | grep -q .; then
-    grep -n 'TODO' "$FILE_PATH" 2>/dev/null | grep -v '#[0-9]' | head -5
+# Store results in a variable so the pipeline executes only once.
+_todo_hits=$(grep -n 'TODO' "$FILE_PATH" 2>/dev/null | grep -v '#[0-9]' | head -5)
+if [ -n "$_todo_hits" ]; then
+    echo "$_todo_hits"
     echo "[HOOK] WARNING: TODO comment without issue reference in $FILE_PATH" >&2
     WARNINGS=$((WARNINGS + 1))
 fi
