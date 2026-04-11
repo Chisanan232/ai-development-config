@@ -17,12 +17,13 @@ Do not run this mid-implementation — it is a completion gate, not a progress c
 ## Steps
 
 ### 1. Branch health
-- [ ] Confirm the branch is based on the latest `main` (or `master`).
+- [ ] Confirm the branch is based on the latest base branch (main / master / develop — check the project's CLAUDE.md).
 - [ ] Confirm there are no merge conflicts.
 - [ ] Confirm there are no uncommitted changes.
 
 ### 2. Diff review
-- [ ] Run `git diff main...HEAD` and read every changed line.
+- [ ] Detect the base branch and read every changed line:
+      `BASE=$(git rev-parse --abbrev-ref origin/HEAD 2>/dev/null | sed 's|origin/||' || echo "main"); git diff "${BASE}...HEAD"`
 - [ ] Confirm all changes are within scope.
 - [ ] Confirm no debug code, temporary scaffolding, or stray print statements.
 - [ ] Confirm no secrets or credentials in any changed file.
@@ -46,7 +47,9 @@ Do not run this mid-implementation — it is a completion gate, not a progress c
 
 ### 6. PR description
 - [ ] Write the PR title following CLAUDE.md PR conventions.
-- [ ] Write the PR body using `.github/PULL_REQUEST_TEMPLATE.md` as the template.
+- [ ] Write the PR body: use `.github/PULL_REQUEST_TEMPLATE.md` if it exists,
+      otherwise use the PR description format from CLAUDE.md Pull Request Policy
+      (Summary / Motivation / Changes / How to Verify / Checklist).
 - [ ] Link the relevant issue(s).
 
 ### 7. MCP-assisted checks (if available)
