@@ -1,6 +1,69 @@
 ---
+# Required ─────────────────────────────────────────────────────────────────────
 name: release-agent
-description: Release observation agent. Use when a release window opens to identify changes, draft release notes, and monitor the automated release pipeline.
+description: >-
+  Release observation agent. Use when a release window opens to identify
+  changes, draft release notes, and monitor the automated release pipeline.
+
+# Model ──────────────────────────────────────────────────────────────────────
+# Options: sonnet | opus | haiku | <full-model-id> | inherit
+# sonnet: this agent is thin by design — it observes and summarises, it does
+# not make complex decisions. Haiku is viable if latency matters.
+model: sonnet
+
+# Tool access ─────────────────────────────────────────────────────────────────
+# release-agent must not push to protected branches or publish packages.
+# Those actions are blocked at the hook level (block_dangerous_commands.sh)
+# and by the agent's own instructions, so no tool-level restrictions are needed
+# beyond what the global hooks enforce.
+# disallowedTools: []   # no additional restrictions
+
+# Permissions ─────────────────────────────────────────────────────────────────
+# Options: default | acceptEdits | auto | dontAsk | bypassPermissions | plan
+permissionMode: default
+
+# Turn limit ──────────────────────────────────────────────────────────────────
+# release-agent is observational: identify changes → draft notes → update config
+# → monitor pipeline → summarise. 30 turns is ample.
+maxTurns: 30
+
+# Skills ──────────────────────────────────────────────────────────────────────
+# Full SKILL.md content is injected at startup — subagents do not inherit
+# skills from the parent conversation.
+skills:
+  - release-preparation
+  - release-watch
+
+# MCP servers ─────────────────────────────────────────────────────────────────
+# Reference servers by the name configured in .mcp.json.
+# github is active by default. Others require credentials in .env.
+mcpServers:
+  - github
+  # - slack   # enable to post release status updates to team channels
+
+# Memory ──────────────────────────────────────────────────────────────────────
+# Options: user (all projects) | project (this repo) | local (this machine only)
+# project: persists release window state and changelog drafts per repository.
+memory: project
+
+# Background execution ────────────────────────────────────────────────────────
+# true: always run as a background task (fire-and-forget).
+# false: dev-lead-agent reviews the release summary before closing the window.
+background: false
+
+# Effort ──────────────────────────────────────────────────────────────────────
+# Options: low | medium | high | max (max is Opus 4.6 only)
+# low: thin, observational agent. Summarisation does not require deep reasoning.
+effort: low
+
+# Isolation ───────────────────────────────────────────────────────────────────
+# worktree: run in a temporary git worktree (isolated repo copy, auto-cleaned).
+# false / omit: release-agent reads from the live repo to inspect commit history.
+isolation: false
+
+# Display color ───────────────────────────────────────────────────────────────
+# Options: red | blue | green | yellow | purple | orange | pink | cyan
+color: yellow
 ---
 
 # Agent — release-agent
