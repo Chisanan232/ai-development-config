@@ -506,7 +506,8 @@ If either hook fails, the push is blocked. Fix the failure — do not use `--no-
 Before beginning any implementation task, Claude Code must verify:
 
 1. **Branch is current** — local branch is up to date with the expected remote base.
-   Run `git fetch origin` and confirm no divergence before writing code.
+   Resolve the tracking remote (`git rev-parse --abbrev-ref --symbolic-full-name @{u} | cut -d'/' -f1`)
+   and run `git fetch <remote>`. Do not hardcode `origin` — the remote may be named differently.
 2. **CI is not red on the base branch** — do not start work on top of a broken base.
    Check the most recent CI run on `main` (or the target branch) before branching.
 3. **No uncommitted state** — working tree must be clean before switching branches
