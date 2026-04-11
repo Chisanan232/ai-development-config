@@ -385,12 +385,29 @@ Convention: `<language>-<tool>-<action>` — e.g., `python-ruff-fixing`,
 
 The following language-specific skills ship with this configuration kit:
 
+**Python**
+
 | Skill | When to use |
 |---|---|
 | `python-pytest-failure-debugging` | When pytest reports FAILED, ERROR, or collection errors |
 | `python-ruff-fixing` | When ruff lint or format check fails |
 | `python-mypy-debugging` | When mypy reports type errors |
 | `python-precommit-repair` | When pre-commit hooks fail for a Python project |
+
+**TypeScript / JavaScript**
+
+| Skill | When to use |
+|---|---|
+| `typescript-tsc-debugging` | When `tsc --noEmit` reports type errors |
+| `typescript-eslint-fixing` | When ESLint reports violations |
+| `node-precommit-repair` | When pre-commit hooks fail for a Node/TypeScript project |
+
+**Go**
+
+| Skill | When to use |
+|---|---|
+| `go-vet-debugging` | When `go vet` or `go build` reports errors |
+| `go-golangci-fixing` | When `golangci-lint` reports violations |
 
 ---
 
