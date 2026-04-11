@@ -129,7 +129,10 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
     SENTINEL_BASE="${CLAUDE_SENTINEL_DIR:-${HOME}/.claude/sentinels}"
     # Portable SHA-256: shasum (macOS/BSD) with fallback to sha256sum (Linux/GNU)
     _sha256() { shasum -a 256 2>/dev/null || sha256sum; }
-    REPO_KEY=$(git remote get-url origin 2>/dev/null | _sha256 | cut -c1-12)
+    REPO_REMOTE_URL=$(git remote get-url origin 2>/dev/null \
+        || git remote get-url remote 2>/dev/null \
+        || echo "unknown")
+    REPO_KEY=$(echo "$REPO_REMOTE_URL" | _sha256 | cut -c1-12)
     BRANCH=$(git branch --show-current | tr '/' '_')
     mkdir -p "${SENTINEL_BASE}/${REPO_KEY}/${BRANCH}"
     touch "${SENTINEL_BASE}/${REPO_KEY}/${BRANCH}/.last-test-pass"
