@@ -8,6 +8,11 @@
 # IMPORTANT: If checks fail, delegate repair to the language-appropriate
 # pre-commit repair skill (e.g., python-precommit-repair for Python projects).
 # Do not enter a self-repair loop from within this hook.
+#
+# Claude Code passes hook context via stdin as JSON (not env vars).
+# PreToolUse JSON shape:
+#   { "hook_event_name": "PreToolUse", "tool_name": "Bash",
+#     "tool_input": { "command": "..." }, ... }
 
 set -euo pipefail
 
@@ -19,11 +24,14 @@ if [[ "${CLAUDE_SKIP_PRECOMMIT_GATE:-0}" == "1" ]]; then
     exit 0
 fi
 
-COMMAND=$(echo "${CLAUDE_TOOL_INPUT:-}" | python3 -c "
+# Read the full stdin JSON once — stdin can only be consumed once.
+HOOK_INPUT=$(cat)
+
+COMMAND=$(echo "$HOOK_INPUT" | python3 -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
-    print(data.get('command', ''))
+    print(data.get('tool_input', {}).get('command', ''))
 except Exception:
     print('')
 " 2>/dev/null || echo "")

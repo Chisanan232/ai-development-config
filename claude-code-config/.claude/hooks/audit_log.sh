@@ -2,6 +2,12 @@
 # audit_log.sh
 # Fires: PostToolUse[Bash]
 # Purpose: Log every shell command Claude Code executes for traceability.
+#
+# Claude Code passes hook context via stdin as JSON (not env vars).
+# PostToolUse[Bash] JSON shape:
+#   { "hook_event_name": "PostToolUse", "tool_name": "Bash",
+#     "tool_input": { "command": "..." },
+#     "tool_response": { "output": "...", "exitCode": N }, ... }
 
 set -euo pipefail
 
@@ -26,17 +32,31 @@ if [ -f "$LOG_FILE" ]; then
     fi
 fi
 
-# Extract command from tool input
-COMMAND=$(echo "${CLAUDE_TOOL_INPUT:-}" | python3 -c "
+# Read the full stdin JSON once — stdin can only be consumed once.
+HOOK_INPUT=$(cat)
+
+# Extract command from tool_input.command
+COMMAND=$(echo "$HOOK_INPUT" | python3 -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
-    print(data.get('command', ''))
+    print(data.get('tool_input', {}).get('command', ''))
 except Exception:
     print('')
 " 2>/dev/null || echo "")
 
-EXIT_CODE="${CLAUDE_TOOL_EXIT_CODE:-0}"
+# Extract exit code from tool_response (field name may vary by Claude Code version)
+EXIT_CODE=$(echo "$HOOK_INPUT" | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    resp = data.get('tool_response', {})
+    code = resp.get('exitCode', resp.get('exit_code', resp.get('returnCode', 0)))
+    print(int(code) if code is not None else 0)
+except Exception:
+    print(0)
+" 2>/dev/null || echo "0")
+
 TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 USER=$(whoami 2>/dev/null || echo "unknown")
 PWD_VAL=$(pwd 2>/dev/null || echo "unknown")

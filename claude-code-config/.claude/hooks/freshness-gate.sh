@@ -3,15 +3,22 @@
 # Fires: PreToolUse[Bash] — before significant git or file-mutation commands
 # Purpose: Verify the local branch is not stale relative to the remote base.
 # Blocks if the current branch is behind its upstream by more than 0 commits.
-# Reads the command from CLAUDE_TOOL_INPUT environment variable (JSON).
+#
+# Claude Code passes hook context via stdin as JSON (not env vars).
+# PreToolUse JSON shape:
+#   { "hook_event_name": "PreToolUse", "tool_name": "Bash",
+#     "tool_input": { "command": "..." }, ... }
 
 set -euo pipefail
 
-COMMAND=$(echo "${CLAUDE_TOOL_INPUT:-}" | python3 -c "
+# Read the full stdin JSON once — stdin can only be consumed once.
+HOOK_INPUT=$(cat)
+
+COMMAND=$(echo "$HOOK_INPUT" | python3 -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
-    print(data.get('command', ''))
+    print(data.get('tool_input', {}).get('command', ''))
 except Exception:
     print('')
 " 2>/dev/null || echo "")
