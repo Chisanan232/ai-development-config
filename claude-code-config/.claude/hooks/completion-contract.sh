@@ -11,27 +11,38 @@
 # Exit codes:
 #   0 — no issue (or not a test runner command)
 #   2 — test runner produced failure output; block next Bash call
+#
+# Claude Code passes hook context via stdin as JSON (not env vars).
+# PostToolUse[Bash] JSON shape:
+#   { "hook_event_name": "PostToolUse", "tool_name": "Bash",
+#     "tool_input": { "command": "..." },
+#     "tool_response": { "output": "...", "exitCode": N }, ... }
 
 set -euo pipefail
 
 [ -f "${HOME}/.claude/config.env" ] && source "${HOME}/.claude/config.env"
 
-# ── Extract command and output ────────────────────────────────────────────────
+# ── Extract command and output from stdin JSON ────────────────────────────────
+# Read stdin once at the top — it can only be consumed once per invocation.
 
-COMMAND=$(echo "${CLAUDE_TOOL_INPUT:-}" | python3 -c "
+HOOK_INPUT=$(cat)
+
+COMMAND=$(echo "$HOOK_INPUT" | python3 -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
-    print(data.get('command', ''))
+    print(data.get('tool_input', {}).get('command', ''))
 except Exception:
     print('')
 " 2>/dev/null || echo "")
 
-OUTPUT=$(echo "${CLAUDE_TOOL_RESULT:-}" | python3 -c "
+OUTPUT=$(echo "$HOOK_INPUT" | python3 -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
-    out = data.get('output', '') or data.get('content', '')
+    resp = data.get('tool_response', {})
+    # Try common field names for Bash output across Claude Code versions
+    out = resp.get('output', '') or resp.get('content', '') or resp.get('stdout', '')
     if isinstance(out, list):
         out = ' '.join(str(item) for item in out)
     print(str(out)[:4000])

@@ -3,6 +3,11 @@
 # Fires: PostToolUse[Write|Edit]
 # Purpose: Lightweight quality check after every file write or edit.
 # Operates in fast mode by default; strict mode when CLAUDE_STRICT=1.
+#
+# Claude Code passes hook context via stdin as JSON (not env vars).
+# PostToolUse[Write|Edit] JSON shape:
+#   { "hook_event_name": "PostToolUse", "tool_name": "Write",
+#     "tool_input": { "file_path": "...", "content": "..." }, ... }
 
 set -euo pipefail
 
@@ -16,19 +21,21 @@ COOLDOWN_SECONDS=30
 if [ -f "$COOLDOWN_FILE" ]; then
     LAST_RUN=$(cat "$COOLDOWN_FILE")
     NOW=$(date +%s)
-    ELAPSED=$((NOW - LAST_RUN))
+    ELAPSED=$((NOW - ${LAST_RUN:-0}))
     if [ "$ELAPSED" -lt "$COOLDOWN_SECONDS" ]; then
         exit 0
     fi
 fi
 date +%s > "$COOLDOWN_FILE"
 
-# Read the file path from tool input
-FILE_PATH=$(echo "${CLAUDE_TOOL_INPUT:-}" | python3 -c "
+# Read the full stdin JSON once — stdin can only be consumed once.
+HOOK_INPUT=$(cat)
+
+FILE_PATH=$(echo "$HOOK_INPUT" | python3 -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
-    print(data.get('file_path', ''))
+    print(data.get('tool_input', {}).get('file_path', ''))
 except Exception:
     print('')
 " 2>/dev/null || echo "")
