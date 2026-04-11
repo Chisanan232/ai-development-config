@@ -26,14 +26,23 @@ mkdir -p "$BREAKER_DIR"
 
 _read_field() {
   local file="$1" field="$2" default="$3"
-  python3 -c "
-import json, sys
+  # Shell-to-Python boundary: pass file path and field name via environment
+  # variables — never interpolate them into Python source strings. A ticket
+  # name containing a single quote (e.g. PROJ-123') would close the string
+  # literal and cause a Python syntax error, silently returning the default
+  # and preventing the circuit breaker from ever opening.
+  _CB_FILE="$file" _CB_FIELD="$field" _CB_DEFAULT="$default" python3 - <<'PYEOF' 2>/dev/null || echo "$default"
+import json, os, sys
+f       = os.environ["_CB_FILE"]
+field   = os.environ["_CB_FIELD"]
+default = os.environ["_CB_DEFAULT"]
 try:
-    d = json.load(open('${file}'))
-    print(d.get('${field}', '${default}'))
+    with open(f) as fh:
+        d = json.load(fh)
+    print(d.get(field, default))
 except Exception:
-    print('${default}')
-" 2>/dev/null || echo "$default"
+    print(default)
+PYEOF
 }
 
 _write_state() {
@@ -42,15 +51,20 @@ _write_state() {
   timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   state_file="${BREAKER_DIR}/${ticket}.json"
   tmp="$(mktemp "${state_file}.XXXXXX")"
-  cat > "$tmp" <<JSON
-{
-  "ticket": "${ticket}",
-  "consecutive_failures": ${failures},
-  "state": "${state}",
-  "threshold": ${threshold},
-  "timestamp": "${timestamp}"
-}
-JSON
+  # Shell-to-Python boundary: pass ticket and timestamp via environment
+  # variables so that a ticket name containing '"' or a newline does not
+  # produce malformed JSON. failures/state/threshold are numerics or
+  # internal enum values — safe to interpolate directly.
+  _CB_TICKET="$ticket" _CB_TIMESTAMP="$timestamp" python3 - > "$tmp" <<PYEOF
+import json, os
+print(json.dumps({
+    "ticket":               os.environ["_CB_TICKET"],
+    "consecutive_failures": ${failures},
+    "state":                "${state}",
+    "threshold":            ${threshold},
+    "timestamp":            os.environ["_CB_TIMESTAMP"],
+}, indent=2))
+PYEOF
   mv "$tmp" "$state_file"
 }
 
