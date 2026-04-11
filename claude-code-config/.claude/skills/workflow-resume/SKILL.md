@@ -60,48 +60,48 @@ session is interrupted (crash, context limit, manual stop) and needs to continue
    - Confirm circuit breaker has been manually reset before resuming.
 
 ### Phase 2 — Environment verification
-7. Confirm the circuit breaker for this ticket is in "closed" state:
+8. Confirm the circuit breaker for this ticket is in "closed" state:
    ```bash
    bash ~/.claude/hooks/circuit-breaker-gate.sh check "$TICKET"
    ```
-   If open: stop. Surface the same escalation block from Phase 1, step 5.
-8. Confirm the git branch matches the ticket's expected branch:
+   If open: stop. Surface the same escalation block from Phase 1, step 6.
+9. Confirm the git branch matches the ticket's expected branch:
    ```bash
    git branch --show-current
    ```
-9. Run `git fetch && git status` to confirm the branch is clean and not behind.
-10. If the working tree is dirty: identify the uncommitted changes.
+10. Run `git fetch && git status` to confirm the branch is clean and not behind.
+11. If the working tree is dirty: identify the uncommitted changes.
     - If they look like in-progress work from the interrupted session:
       review with the engineer before discarding or committing.
     - Do not run `git clean` or `git reset --hard` without explicit confirmation.
 
 ### Phase 3 — Determine resume point
-8. Map the recorded `step` and `workflow` to the correct phase:
+12. Map the recorded `step` and `workflow` to the correct phase:
 
-   For `dev-impl-loop`:
-   | step | Resume action |
-   |---|---|
-   | 0 | Re-enter Phase 0 (env verify) |
-   | 1 | Re-enter Phase 1 (ralph loop — check what's implemented vs acceptance criteria) |
-   | 2 | Re-enter Phase 2 (full test suite) |
-   | 3 | Re-enter Phase 3 (pre-commit) |
-   | 4 | Re-enter Phase 4 (QA handoff — check if QA verdict arrived) |
-   | 5 | Re-enter Phase 5 (post-QA: open PR or re-loop) |
+    For `dev-impl-loop`:
+    | step | Resume action |
+    |---|---|
+    | 0 | Re-enter Phase 0 (env verify) |
+    | 1 | Re-enter Phase 1 (implementation loop — check what's implemented vs acceptance criteria) |
+    | 2 | Re-enter Phase 2 (full test suite) |
+    | 3 | Re-enter Phase 3 (pre-commit) |
+    | 4 | Re-enter Phase 4 (QA handoff — check if QA verdict arrived) |
+    | 5 | Re-enter Phase 5 (post-QA: open PR or re-loop) |
 
-   For other workflows: use the workflow's own phase-to-step mapping.
+    For other workflows: use the workflow's own phase-to-step mapping.
 
-9. Before re-entering, list what was already completed in this session:
-   ```
-   Resuming [ticket-ref] at step [N] of [total].
-   Completed: phases 0..N-1
-   Resuming: phase [N] — [phase description]
-   ```
+13. Before re-entering, list what was already completed in this session:
+    ```
+    Resuming [ticket-ref] at step [N] of [total].
+    Completed: phases 0..N-1
+    Resuming: phase [N] — [phase description]
+    ```
 
 ### Phase 4 — Resume execution
-10. Re-invoke the appropriate skill or phase directly.
+14. Re-invoke the appropriate skill or phase directly.
     Do not restart from Phase 0 unless the environment check (Phase 2 of this
     skill) revealed the branch has been reset or re-created.
-11. Update the workflow state to reflect the resumed session:
+15. Update the workflow state to reflect the resumed session:
     ```bash
     bash ~/.claude/hooks/workflow-state.sh write \
       "[ticket-ref]" "[workflow]" "[step]" "[total]" "in_progress"

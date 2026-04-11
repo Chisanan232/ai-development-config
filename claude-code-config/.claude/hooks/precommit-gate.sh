@@ -11,6 +11,14 @@
 
 set -euo pipefail
 
+[ -f "${HOME}/.claude/config.env" ] && source "${HOME}/.claude/config.env"
+
+# Allow opt-out for engineers who run pre-commit manually or find the gate too slow.
+if [[ "${CLAUDE_SKIP_PRECOMMIT_GATE:-0}" == "1" ]]; then
+    echo "[HOOK] precommit-gate: skipped (CLAUDE_SKIP_PRECOMMIT_GATE=1)." >&2
+    exit 0
+fi
+
 COMMAND=$(echo "${CLAUDE_TOOL_INPUT:-}" | python3 -c "
 import sys, json
 try:

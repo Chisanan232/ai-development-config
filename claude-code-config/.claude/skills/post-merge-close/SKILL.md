@@ -93,9 +93,11 @@ Before each step, check if it was already completed:
 
 ### Phase 3 — Branch cleanup
 10. Skip if `_checkpoint_get branch_deleted` == "true".
-11. Delete the remote feature branch:
+11. Delete the remote feature branch (detect the remote name — do not assume `origin`):
     ```bash
-    git push origin --delete [feature-branch-name]
+    REMOTE=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null \
+        | cut -d'/' -f1 || git remote | head -1 || echo "origin")
+    git push "$REMOTE" --delete [feature-branch-name]
     ```
     Do not delete protected branches (`main`, `master`, `release/*`).
 12. Delete the local tracking branch (safe delete only):

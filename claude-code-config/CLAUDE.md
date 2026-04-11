@@ -385,12 +385,29 @@ Convention: `<language>-<tool>-<action>` — e.g., `python-ruff-fixing`,
 
 The following language-specific skills ship with this configuration kit:
 
+**Python**
+
 | Skill | When to use |
 |---|---|
 | `python-pytest-failure-debugging` | When pytest reports FAILED, ERROR, or collection errors |
 | `python-ruff-fixing` | When ruff lint or format check fails |
 | `python-mypy-debugging` | When mypy reports type errors |
 | `python-precommit-repair` | When pre-commit hooks fail for a Python project |
+
+**TypeScript / JavaScript**
+
+| Skill | When to use |
+|---|---|
+| `typescript-tsc-debugging` | When `tsc --noEmit` reports type errors |
+| `typescript-eslint-fixing` | When ESLint reports violations |
+| `node-precommit-repair` | When pre-commit hooks fail for a Node/TypeScript project |
+
+**Go**
+
+| Skill | When to use |
+|---|---|
+| `go-vet-debugging` | When `go vet` or `go build` reports errors |
+| `go-golangci-fixing` | When `golangci-lint` reports violations |
 
 ---
 
@@ -556,6 +573,8 @@ and uncomment the variables you want to override.
 | `CLAUDE_SKIP_AUDIT` | `0` | Set to `1` to disable command audit logging |
 | `CLAUDE_STALE_PR_DAYS` | `14` | Days of inactivity before a PR is considered stale |
 | `CLAUDE_SKIP_TEST_GATE` | `0` | Set to `1` to disable the full-test-gate push gate globally |
+| `CLAUDE_SKIP_PRECOMMIT_GATE` | `0` | Set to `1` to disable the precommit-gate push gate globally (useful when pre-commit is run manually during dev-impl-loop) |
+| `CLAUDE_STRICT` | `0` | Set to `1` to treat quality_gate warnings (debug statements, unlinked TODOs) as errors that block the next action |
 | `CLAUDE_SESSION_NOTES_DIR` | `~/.claude/session-notes` | Directory for per-ticket Markdown session notes |
 | `CLAUDE_INTEGRATION_TEST_COMMAND` | _(unset)_ | Command to run cross-repo integration tests (cross-repo-coordinator Phase 4) |
 
