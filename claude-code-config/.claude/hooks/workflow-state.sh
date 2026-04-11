@@ -34,17 +34,21 @@ STATE_FILE="${STATE_DIR}/${ticket}.json"
 
 _validate_json() {
     local file="$1"
-    python3 -c "
-import json, sys
+    # Pass file and ticket via env vars — never interpolate free-text paths or
+    # ticket refs directly into Python source (single quotes in values break syntax).
+    _WS_FILE="$file" _WS_TICKET="$ticket" python3 -c "
+import json, sys, os
+f = os.environ['_WS_FILE']
+t = os.environ['_WS_TICKET']
 try:
-    with open('${file}') as f:
-        json.load(f)
+    with open(f) as fh:
+        json.load(fh)
     sys.exit(0)
 except json.JSONDecodeError as e:
-    print(f'[workflow-state] CORRUPT state file for ticket: ${ticket} — {e}', file=sys.stderr)
+    print(f'[workflow-state] CORRUPT state file for ticket: {t} — {e}', file=sys.stderr)
     sys.exit(1)
 except FileNotFoundError:
-    print('[workflow-state] state file not found: ${file}', file=sys.stderr)
+    print(f'[workflow-state] state file not found: {f}', file=sys.stderr)
     sys.exit(1)
 " 2>&1
 }
