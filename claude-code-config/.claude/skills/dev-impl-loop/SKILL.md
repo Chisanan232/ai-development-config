@@ -56,9 +56,9 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
    ```
 
 ### Phase 1 — Implementation loop (relative tests)
-5. Begin iterative implementation: write code, run relative tests, fix failures,
+6. Begin iterative implementation: write code, run relative tests, fix failures,
    repeat until all acceptance criteria are covered and relative tests are green.
-6. Within each loop iteration:
+7. Within each loop iteration:
    a. Implement the next logical unit of work for this ticket.
       Follow all conventions in CLAUDE.md (naming, structure, type hints).
    b. Run **relative tests only** — tests in the affected module or package.
@@ -78,19 +78,19 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
       ```bash
       bash ~/.claude/hooks/circuit-breaker-gate.sh record-success "$TICKET"
       ```
-7. Continue iterations until all ticket acceptance criteria are implemented
+8. Continue iterations until all ticket acceptance criteria are implemented
    and relative tests are green.
-8. Exit the implementation loop. Do not proceed to Phase 2 until all relative
+9. Exit the implementation loop. Do not proceed to Phase 2 until all relative
    tests are green and all acceptance criteria are covered.
 
 ### Phase 2 — Full test suite
-9. Run the complete test suite (all modules, not just relative).
-   Update workflow state: step 2 of 5.
-   ```bash
-   bash ~/.claude/hooks/workflow-state.sh write \
-     "$TICKET" "dev-impl-loop" "2" "5" "in_progress"
-   ```
-10. If any test fails:
+10. Run the complete test suite (all modules, not just relative).
+    Update workflow state: step 2 of 5.
+    ```bash
+    bash ~/.claude/hooks/workflow-state.sh write \
+      "$TICKET" "dev-impl-loop" "2" "5" "in_progress"
+    ```
+11. If any test fails:
     a. Determine: is the failure in code I changed, or pre-existing?
     b. Pre-existing failure → document it, report to `dev-lead-agent`, do not fix.
        ```bash
@@ -106,7 +106,7 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
        bash ~/.claude/hooks/circuit-breaker-gate.sh record-failure "$TICKET" 3
        ```
        On success: `bash ~/.claude/hooks/circuit-breaker-gate.sh record-success "$TICKET"`
-11. All tests must pass before proceeding to Phase 3.
+12. All tests must pass before proceeding to Phase 3.
     Record decision:
     ```bash
     bash ~/.claude/hooks/decision-log.sh record \
@@ -116,17 +116,17 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
     ```
 
 ### Phase 3 — Pre-commit checks
-12. Run `pre-commit run --all-files`.
+13. Run `pre-commit run --all-files`.
     Update workflow state: step 3 of 5.
     ```bash
     bash ~/.claude/hooks/workflow-state.sh write \
       "$TICKET" "dev-impl-loop" "3" "5" "in_progress"
     ```
-13. If any check fails: use the language-appropriate pre-commit repair skill
+14. If any check fails: use the language-appropriate pre-commit repair skill
     (e.g., `python-precommit-repair` for Python) or linter-fixing skill
     (e.g., `python-ruff-fixing` for Python/ruff). Re-run after repair.
     Do not use `--no-verify`.
-14. When all checks pass: write the test sentinel (scoped to this repo+branch).
+15. When all checks pass: write the test sentinel (scoped to this repo+branch).
     ```bash
     SENTINEL_BASE="${CLAUDE_SENTINEL_DIR:-${HOME}/.claude/sentinels}"
     # Portable SHA-256: shasum (macOS/BSD) with fallback to sha256sum (Linux/GNU)
@@ -148,7 +148,7 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
     ```
 
 ### Phase 4 — QA handoff (explicit trigger)
-15. Update ticket state to "Ready for QA" in the issue tracker.
+16. Update ticket state to "Ready for QA" in the issue tracker.
     Update workflow state: step 4 of 5.
     ```bash
     bash ~/.claude/hooks/workflow-state.sh write \
@@ -161,7 +161,7 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
       --phase "4" --decision "qa-handoff" \
       --reason "All phases green; signalling qa-agent for acceptance-validation"
     ```
-16. Post a QA handoff comment on the ticket:
+17. Post a QA handoff comment on the ticket:
     ```
     ## Implementation complete — ready for QA
 
@@ -176,11 +176,11 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
 
     Requesting qa-agent to begin acceptance-validation.
     ```
-17. **Explicitly signal `qa-agent`** to begin `acceptance-validation`.
+18. **Explicitly signal `qa-agent`** to begin `acceptance-validation`.
     Do not proceed until the qa-agent verdict arrives.
 
 ### Phase 5 — Post-QA resolution
-18. If qa-agent verdict is "ready":
+19. If qa-agent verdict is "ready":
     a. Update workflow state: step 5 of 5, status "complete".
        ```bash
        bash ~/.claude/hooks/workflow-state.sh write \
@@ -192,7 +192,7 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
        ```
     b. Open a PR using `code-review-prep` and `pr-readiness` skills.
     c. Link the PR to the ticket.
-19. If qa-agent verdict is "blocked":
+20. If qa-agent verdict is "blocked":
     a. Read the blocking items from the verdict output.
     b. Re-enter the Phase 1 implementation loop to address each item.
        Circuit breaker applies — max attempts before escalating.
