@@ -23,7 +23,10 @@ Auto-used. Claude Code invokes this skill when designing or reviewing tests.
 
 ### Phase 2 — Design test cases
 4. Write one test per behavior, not one test per line of code.
-5. Name tests as: `test_<unit>_<condition>_<expected_result>`.
+5. Name tests descriptively: encode the unit under test, the condition, and the
+   expected result. Follow the project's language convention
+   (e.g., `test_<unit>_<condition>_<result>` for Python/Rust,
+   `Test<Unit><Condition>` for Go, `it('should <result> when <condition>')` for JS/TS).
 6. For each external dependency, decide: real (integration) or stub (unit)?
    Follow CLAUDE.md test strategy for this project.
 7. Ensure tests are independent — no shared mutable state between tests.

@@ -27,8 +27,8 @@ BLOCKED_PATTERNS=(
     "mkfs"
     "fdisk"
     "dd if="
-    "curl.*|.*sh"
-    "wget.*|.*sh"
+    "curl.*[|].*sh"     # pipe curl output to shell (e.g. curl url | sh); [|] = literal pipe in ERE
+    "wget.*[|].*sh"     # pipe wget output to shell (e.g. wget -O- url | sh)
     "DROP TABLE"
     "DROP DATABASE"
     "TRUNCATE TABLE"

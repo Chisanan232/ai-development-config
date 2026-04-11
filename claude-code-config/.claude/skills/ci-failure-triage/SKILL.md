@@ -62,8 +62,9 @@ Auto-used. Claude Code invokes this skill whenever CI is red.
 ### Phase 6 — Prevent recurrence
 20. Ask: can a regression test prevent this failure from recurring?
 21. If yes, add it.
-22. If the failure was caused by an environment difference, document it in CLAUDE.md
-    or the project's troubleshooting guide.
+22. If the failure was caused by an environment difference, document it in the
+    project's `.claude/CLAUDE.md` (not the global `~/.claude/CLAUDE.md`) or the
+    project's troubleshooting guide.
 
 ## Safe-Fix Guidance
 - Never add `skip`, `xfail`, `# noqa`, or `# type: ignore` to silence a CI failure.
