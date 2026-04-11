@@ -39,15 +39,23 @@ TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 USER=$(whoami 2>/dev/null || echo "unknown")
 PWD_VAL=$(pwd 2>/dev/null || echo "unknown")
 
-# Write JSON log entry (audit failures must never block execution)
+# Write JSON log entry (audit failures must never block execution).
+# Pass free-text fields via env vars to prevent shell-interpolation injection
+# into the Python source. If COMMAND contains ''', r'''$COMMAND''' terminates
+# prematurely and the audit entry is silently dropped.
+_AL_COMMAND="$COMMAND" \
+_AL_TIMESTAMP="$TIMESTAMP" \
+_AL_USER="$USER" \
+_AL_PWD="$PWD_VAL" \
+_AL_EXIT_CODE="$EXIT_CODE" \
 python3 -c "
-import json
+import json, os
 entry = {
-    'timestamp': '$TIMESTAMP',
-    'user': '$USER',
-    'working_directory': '$PWD_VAL',
-    'command': r'''$COMMAND''',
-    'exit_code': $EXIT_CODE
+    'timestamp': os.environ['_AL_TIMESTAMP'],
+    'user': os.environ['_AL_USER'],
+    'working_directory': os.environ['_AL_PWD'],
+    'command': os.environ.get('_AL_COMMAND', ''),
+    'exit_code': int(os.environ.get('_AL_EXIT_CODE', '0') or '0'),
 }
 print(json.dumps(entry))
 " >> "$LOG_FILE" 2>/dev/null || true
