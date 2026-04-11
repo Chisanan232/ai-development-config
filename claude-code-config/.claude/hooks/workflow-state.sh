@@ -102,8 +102,12 @@ if [[ "$cmd" == "read" ]]; then
         exit 1
     fi
 
-    validation_output="$(_validate_json "$STATE_FILE")"
-    if [[ $? -ne 0 ]]; then
+    # Use "if ! var=$(cmd)" rather than "var=$(cmd); if [[ $? -ne 0 ]]".
+    # With set -e active, a failing command substitution in an assignment exits
+    # the script immediately — the subsequent $? check is never reached.
+    # The "if !" form puts the assignment in a conditional context where set -e
+    # does not apply, so the failure is handled by the if branch instead.
+    if ! validation_output="$(_validate_json "$STATE_FILE")"; then
         echo "$validation_output" >&2
         echo "[workflow-state] Delete the corrupt file and restart from ticket-pickup-check:" >&2
         echo "  rm ${STATE_FILE}" >&2
