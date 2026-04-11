@@ -6,6 +6,8 @@
 
 set -euo pipefail
 
+[ -f "${HOME}/.claude/config.env" ] && source "${HOME}/.claude/config.env"
+
 STRICT_MODE="${CLAUDE_STRICT:-0}"
 COOLDOWN_FILE="/tmp/.claude_quality_gate_last_run"
 COOLDOWN_SECONDS=30
