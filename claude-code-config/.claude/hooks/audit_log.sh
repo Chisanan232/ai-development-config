@@ -5,6 +5,8 @@
 
 set -euo pipefail
 
+[ -f "${HOME}/.claude/config.env" ] && source "${HOME}/.claude/config.env"
+
 LOG_DIR="${CLAUDE_AUDIT_LOG_DIR:-$HOME/.claude/audit}"
 LOG_FILE="$LOG_DIR/commands.jsonl"
 MAX_LOG_SIZE_BYTES=10485760  # 10 MB
