@@ -383,6 +383,15 @@ Invocation Guide and ensure the skills directory contains matching `SKILL.md` fi
 Convention: `<language>-<tool>-<action>` — e.g., `python-ruff-fixing`,
 `typescript-tsc-debugging`, `go-golangci-fixing`, `rust-clippy-repair`.
 
+The following language-specific skills ship with this configuration kit:
+
+| Skill | When to use |
+|---|---|
+| `python-pytest-failure-debugging` | When pytest reports FAILED, ERROR, or collection errors |
+| `python-ruff-fixing` | When ruff lint or format check fails |
+| `python-mypy-debugging` | When mypy reports type errors |
+| `python-precommit-repair` | When pre-commit hooks fail for a Python project |
+
 ---
 
 ## Auto-Merge Policy
