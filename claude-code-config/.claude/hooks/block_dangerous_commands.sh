@@ -56,12 +56,13 @@ for pattern in "${BLOCKED_PATTERNS[@]}"; do
     fi
 done
 
-# Force-push: block --force and -f, but explicitly allow --force-with-lease
-# (--force-with-lease is the safe alternative and must not be blocked).
-# The general pattern "git push --force" would incorrectly match --force-with-lease
-# as a substring, so this check is handled separately.
+# Force-push: block --force and -f, but explicitly allow --force-with-lease.
+# Check for the flags anywhere in the command (not just immediately after "git push")
+# so that "git push origin --force" and "git push origin main -f" are also caught.
+# Pattern anchors on word boundaries (space or start/end) to avoid matching
+# substrings of other flags (e.g. --force-with-lease is excluded separately).
 if echo "$COMMAND" | grep -qiE "git push"; then
-    if echo "$COMMAND" | grep -qiE "git push -(f|-force)( |$)" \
+    if echo "$COMMAND" | grep -qiE "(^|[[:space:]])(--force|-f)([[:space:]]|$)" \
        && ! echo "$COMMAND" | grep -q "force-with-lease"; then
         echo "[HOOK] BLOCKED: git push --force / -f is forbidden without explicit confirmation." >&2
         echo "[HOOK] If a force-push is truly needed, use --force-with-lease for safety." >&2
