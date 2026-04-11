@@ -17,9 +17,13 @@ Auto-used. Claude Code invokes this skill before any PR is opened.
 ### Phase 1 — Self-review
 1. Detect the base branch and review every changed line:
    ```bash
-   BASE=$(git rev-parse --abbrev-ref origin/HEAD 2>/dev/null | sed 's|origin/||' || echo "main")
+   REMOTE=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null \
+       | cut -d'/' -f1 || echo "origin")
+   BASE=$(git rev-parse --abbrev-ref "${REMOTE}/HEAD" 2>/dev/null \
+       | sed "s|${REMOTE}/||" || echo "main")
    git diff "${BASE}...HEAD"
    ```
+   Do not hardcode `origin` — the remote may be named differently.
 2. Ask: does any change exceed the scope of the stated goal?
 3. Ask: is there any debug code, temporary scaffolding, or TODO without an issue reference?
 4. Ask: are all changed public APIs annotated?

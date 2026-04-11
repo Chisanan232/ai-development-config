@@ -22,8 +22,14 @@ Do not run this mid-implementation — it is a completion gate, not a progress c
 - [ ] Confirm there are no uncommitted changes.
 
 ### 2. Diff review
-- [ ] Detect the base branch and read every changed line:
-      `BASE=$(git rev-parse --abbrev-ref origin/HEAD 2>/dev/null | sed 's|origin/||' || echo "main"); git diff "${BASE}...HEAD"`
+- [ ] Detect the base branch and read every changed line (do not hardcode `origin`):
+      ```bash
+      REMOTE=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null \
+          | cut -d'/' -f1 || echo "origin")
+      BASE=$(git rev-parse --abbrev-ref "${REMOTE}/HEAD" 2>/dev/null \
+          | sed "s|${REMOTE}/||" || echo "main")
+      git diff "${BASE}...HEAD"
+      ```
 - [ ] Confirm all changes are within scope.
 - [ ] Confirm no debug code, temporary scaffolding, or stray print statements.
 - [ ] Confirm no secrets or credentials in any changed file.
