@@ -57,7 +57,10 @@ if echo "$FILE_PATH" | grep -qE '\.(js|ts|jsx|tsx)$'; then
 fi
 
 # --- Check 2: TODO without issue reference ---
-if grep -nE 'TODO(?!.*#[0-9]+)' "$FILE_PATH" 2>/dev/null | head -5; then
+# Note: ERE (grep -E) does not support lookaheads on macOS or GNU grep,
+# so the negative-lookahead pattern silently matches nothing. Use a pipeline instead.
+if grep -n 'TODO' "$FILE_PATH" 2>/dev/null | grep -v '#[0-9]' | head -5 | grep -q .; then
+    grep -n 'TODO' "$FILE_PATH" 2>/dev/null | grep -v '#[0-9]' | head -5
     echo "[HOOK] WARNING: TODO comment without issue reference in $FILE_PATH" >&2
     WARNINGS=$((WARNINGS + 1))
 fi
