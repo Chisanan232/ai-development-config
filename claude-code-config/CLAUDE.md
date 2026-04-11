@@ -666,6 +666,18 @@ Add `.claude/.current-ticket` to `.gitignore`.
 Use `decision-log.sh tail` or `decision-log.sh query --ticket T` to trace
 why the system acted as it did without reconstructing from raw command logs.
 
+### Which skills use workflow-state.sh
+
+Not all skills write to `workflow-state.sh`. The table below shows the tracking
+mechanism for each multi-phase skill:
+
+| Skill | State tracking | Resume via |
+|---|---|---|
+| `dev-impl-loop` | `workflow-state.sh` | `/workflow-resume <ticket>` |
+| `ticket-pickup-check` | `workflow-state.sh` (initial write only) | `/workflow-resume <ticket>` |
+| `post-merge-close` | `workflow-state.sh` (final write only) | Re-run skill (checkpoint file handles idempotency) |
+| `cross-repo-coordinator` | `session-memory.sh` | Follow the "Resuming an interrupted session" section in the skill's own SKILL.md — `/workflow-resume` will find no state file |
+
 ### What workflow state does not replace
 
 - State tracks **which phase** was reached, not the content of changes made.
