@@ -1,3 +1,8 @@
+---
+name: dev-lead-agent
+description: Development lead agent. Use for ticket intake, task decomposition, PR review, merge decisions, bot PR coordination, and release window handoff.
+---
+
 # Agent — dev-lead-agent
 
 ## Role

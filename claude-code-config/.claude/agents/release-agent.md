@@ -1,3 +1,8 @@
+---
+name: release-agent
+description: Release observation agent. Use when a release window opens to identify changes, draft release notes, and monitor the automated release pipeline.
+---
+
 # Agent — release-agent
 
 ## Role

@@ -1,3 +1,8 @@
+---
+name: dev-agent
+description: Implementation agent. Use for code writing, test writing, local validation, and focused CI repair on concrete decomposed tasks.
+---
+
 # Agent — dev-agent
 
 ## Role

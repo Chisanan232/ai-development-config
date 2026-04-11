@@ -1,3 +1,8 @@
+---
+name: qa-agent
+description: Quality validation agent. Use to verify acceptance criteria, identify regressions, and perform edge-case and adversarial testing before a PR is merged.
+---
+
 # Agent — qa-agent
 
 ## Role
