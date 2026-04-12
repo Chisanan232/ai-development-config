@@ -52,7 +52,9 @@ Auto-used. Claude Code invokes this skill before any PR is opened.
 13. Link related issues: `Closes #<issue>` or `Refs #<issue>`.
 
 ### Phase 4 — Final check
-14. Confirm the branch name follows the project convention.
+14. Confirm the branch name follows the four-part convention:
+    `<release-or-phase>/<ticket-number>/<type>/<short-summary>`
+    e.g. `v0.1.0/TEST-1/feat/add_new_endpoint`
 15. Confirm no merge conflicts with the base branch.
 16. Confirm the commit history is clean and atomic.
     If commits need squashing or reordering, do it now (before the PR is open).
