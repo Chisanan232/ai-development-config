@@ -111,10 +111,12 @@ explicitly refreshing stale configuration — it will overwrite existing content
    `[fill in]` markers remain.
 
 ### Phase 3 — Gitignore and hook verification
-7. Add `.claude/.current-ticket` to `.gitignore` if not already present:
+7. Add session state files to `.gitignore` if not already present:
    ```bash
    grep -q "^\.claude/\.current-ticket" .gitignore 2>/dev/null \
      || echo ".claude/.current-ticket" >> .gitignore
+   grep -q "^\.claude/\.current-worktree" .gitignore 2>/dev/null \
+     || echo ".claude/.current-worktree" >> .gitignore
    ```
 8. Verify the hook chain is reachable:
    ```bash
