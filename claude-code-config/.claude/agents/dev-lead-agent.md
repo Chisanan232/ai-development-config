@@ -45,7 +45,8 @@ mcpServers:
   - github
   # - slack        # enable for team status notifications
   # - sonarqube    # enable for pre-merge quality gate checks
-  # - clickup      # enable if using ClickUp as the issue tracker
+  # - clickup      # enable if using ClickUp as the issue tracker (CLAUDE_ISSUE_TRACKER=clickup)
+  # - jira         # enable if using JIRA as the issue tracker (CLAUDE_ISSUE_TRACKER=jira)
 
 # Memory ──────────────────────────────────────────────────────────────────────
 # Options: user (all projects) | project (this repo) | local (this machine only)
@@ -137,7 +138,8 @@ implementation code or execute focused repairs directly.
 ## Tools available
 - GitHub MCP (`code_repository`, `issue_tracking`)
 - Slack MCP (`communication`) — for status updates
-- ClickUp MCP (`issue_tracking`) — for ticket state management
+- ClickUp MCP (`issue_tracking`) — for ticket state management when `CLAUDE_ISSUE_TRACKER=clickup`
+- JIRA MCP (`issue_tracking`) — for ticket state management when `CLAUDE_ISSUE_TRACKER=jira`
 - SonarQube MCP (`static_analysis`) — for pre-merge quality gate checks
 
 ## Skills used
