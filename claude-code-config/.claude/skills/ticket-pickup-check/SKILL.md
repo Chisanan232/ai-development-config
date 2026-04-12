@@ -39,31 +39,60 @@ task. Must pass before `dev-impl-loop` begins.
    - Report the conflict to `dev-lead-agent`.
 10. If the ticket is unassigned: proceed to Check 4.
 
-### Check 4 — Self-assign and state transition
-11. Assign the ticket to the current agent session / developer identity.
-12. Transition the ticket state to "In Progress".
-13. Post a brief start comment on the ticket:
+### Check 4 — Branch, worktree, self-assign, and state transition
+11. Derive the branch name from the ticket reference and a short summary of the ticket title:
+    ```
+    <ticket-number>-<short-summary>
+    ```
+    - `<ticket-number>`: exact ticket reference (e.g., `PROJ-123`, `42`).
+    - `<short-summary>`: 2–4 words from the ticket title in `snake_case`, max 30 characters.
+    - Example: `PROJ-123-add_new_endpoint`
+
+12. Create a git worktree and branch for this ticket:
+    ```bash
+    REPO_ROOT=$(git rev-parse --show-toplevel)
+    REPO_NAME=$(basename "$REPO_ROOT")
+    BRANCH_NAME="[ticket-number]-[short-summary]"   # e.g. PROJ-123-add_new_endpoint
+    WORKTREE_PATH="${REPO_ROOT}/../${REPO_NAME}-${BRANCH_NAME}"
+
+    # Create the worktree and branch (-b creates a new branch):
+    git worktree add "$WORKTREE_PATH" -b "$BRANCH_NAME"
+    # If the branch already exists (resumed session), omit -b:
+    # git worktree add "$WORKTREE_PATH" "$BRANCH_NAME"
+    ```
+
+13. Assign the ticket to the current agent session / developer identity.
+14. Transition the ticket state to "In Progress".
+15. Post a brief start comment on the ticket:
     ```
     Starting implementation — dev-agent session [timestamp].
     Branch: [branch-name]
+    Worktree: [worktree-path]
     ```
-14. **Bind the ticket reference** to the current session so all subsequent
-    skills can resolve it without requiring the engineer to re-state it:
-    ```bash
-    # Write to the repo-local context file (committed to .gitignore)
-    echo "[ticket-ref]" > .claude/.current-ticket
 
-    # Also export for the current shell session
+16. **Bind the ticket reference and worktree path** to the current session:
+    ```bash
+    # In the MAIN repo — write context files for cross-session reference
+    mkdir -p .claude
+    echo "[ticket-ref]" > .claude/.current-ticket
+    echo "$WORKTREE_PATH" > .claude/.current-worktree
+
+    # In the WORKTREE — write the ticket context so skills work from inside it
+    mkdir -p "${WORKTREE_PATH}/.claude"
+    echo "[ticket-ref]" > "${WORKTREE_PATH}/.claude/.current-ticket"
+
+    # Export for the current shell session
     export CLAUDE_CURRENT_TICKET="[ticket-ref]"
+    export CLAUDE_CURRENT_WORKTREE="$WORKTREE_PATH"
     ```
-    If `CLAUDE_CURRENT_TICKET` is already set in the environment (e.g., from
-    a CI pipeline), skip the file write — the env var takes precedence.
-15. Write the initial workflow state file:
+    All subsequent development work happens inside `$WORKTREE_PATH`.
+
+17. Write the initial workflow state file:
     ```bash
     bash ~/.claude/hooks/workflow-state.sh write \
       "[ticket-ref]" "dev-impl-loop" "0" "5" "in_progress"
     ```
-16. Load any prior session notes for this ticket and surface them:
+18. Load any prior session notes for this ticket and surface them:
     ```bash
     bash ~/.claude/hooks/session-memory.sh read "[ticket-ref]"
     ```
@@ -81,6 +110,7 @@ task. Must pass before `dev-impl-loop` begins.
 | Workflow state | ✅ Accepted / ❌ [state] | [acceptable / reason blocked] |
 | Blocker check | ✅ No blockers / ❌ Blocked | [blocker ticket refs if any] |
 | Assignee check | ✅ Unassigned → self-assigned / ❌ Assigned to [name] | |
+| Branch / worktree | ✅ [branch-name] at [worktree-path] / ❌ creation failed | |
 
 ### Decision
 - Proceed with implementation: yes / no
@@ -95,17 +125,19 @@ All skills that need the ticket reference resolve it in this order:
 2. `.claude/.current-ticket` file in the repository root (written by this skill)
 3. Prompt the engineer if neither is set
 
-Skills should never hardcode a ticket ref. Use this pattern:
+Skills should never hardcode a ticket ref or worktree path. Use this pattern:
 ```bash
 TICKET="${CLAUDE_CURRENT_TICKET:-$(cat .claude/.current-ticket 2>/dev/null || echo '')}"
 if [[ -z "$TICKET" ]]; then
   echo "No active ticket context. Run ticket-pickup-check first." >&2
   exit 1
 fi
+
+WORKTREE="${CLAUDE_CURRENT_WORKTREE:-$(cat .claude/.current-worktree 2>/dev/null || echo '')}"
 ```
 
-Ensure `.claude/.current-ticket` is listed in `.gitignore` — it is session
-state, not source code.
+Ensure `.claude/.current-ticket` and `.claude/.current-worktree` are listed
+in `.gitignore` — they are session state, not source code.
 
 ## Safe-Fix Guidance
 - Never bypass the state check — implementing a "New" or "Backlog" ticket
@@ -114,3 +146,8 @@ state, not source code.
   escalate to `dev-lead-agent` to resolve before self-assigning.
 - If two parallel dev-agent instances attempt the same ticket simultaneously,
   the one that loses the assignee race must stop and report the conflict.
+- If the worktree path already exists (resumed session), use
+  `git worktree add "$WORKTREE_PATH" "$BRANCH_NAME"` (without `-b`) to
+  reattach to the existing branch without recreating it.
+- If worktree creation fails, run `git worktree list` to inspect active
+  worktrees and `git worktree prune` to remove stale entries, then retry.

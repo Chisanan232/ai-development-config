@@ -37,7 +37,12 @@ Auto-used. Claude Code invokes this skill before any PR is opened.
 10. All must pass. If any fail, stop and fix before proceeding.
 
 ### Phase 3 — PR description
-11. Write the PR title: `<emoji> <scope>: <imperative summary under 70 chars>`
+11. Write the PR title following the global PR title format:
+    ```
+    [<ticket-number>] <emoji> <scope>: <imperative summary under 60 chars>
+    ```
+    Resolve `<ticket-number>` from `$CLAUDE_CURRENT_TICKET` or `.claude/.current-ticket`.
+    Example: `[PROJ-123] ✨ restapi: Add new user authentication endpoint`
 12. Write the PR body with these sections:
     - **Summary**: what changed (one paragraph)
     - **Motivation**: why it changed, issue reference

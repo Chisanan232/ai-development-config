@@ -232,6 +232,19 @@ Every commit must be:
 - One concern per PR. Do not bundle unrelated changes.
 - If a change is large, break it into a sequence of stacked PRs.
 
+### PR title format
+
+```
+[<ticket-number>] <emoji> <scope>: <imperative summary under 60 chars>
+```
+
+- `[<ticket-number>]` — issue/ticket reference in brackets (e.g., `[PROJ-123]`, `[42]`)
+- `<emoji>` — GitEmoji from the Commit Policy table
+- `<scope>` — affected module, package, or area
+- `<imperative summary>` — what changed, imperative mood
+
+Example: `[PROJ-123] ✨ restapi: Add new user authentication endpoint`
+
 ### PR description must include
 
 1. What changed (one paragraph)
@@ -524,6 +537,53 @@ Do not proceed on a stale or broken foundation.
 
 ---
 
+## Git Worktree Workflow
+
+Each ticket is developed in an isolated git worktree so the main working tree
+stays clean and multiple tickets can be worked on concurrently without branch-switching.
+
+### Branch naming convention
+
+All feature and fix branches must follow this format:
+
+```
+<ticket-number>-<short-summary>
+```
+
+- `<ticket-number>`: the exact issue/ticket reference (e.g., `PROJ-123`, `42`)
+- `<short-summary>`: 2–4 words from the ticket title in `snake_case`, max 30 characters
+- Examples: `PROJ-123-add_new_endpoint`, `42-fix_auth_token_refresh`
+
+### Worktree path convention
+
+Worktrees are created as sibling directories of the main repository:
+
+```
+<repo-parent-dir>/<repo-name>-<branch-name>/
+```
+
+Example: main repo at `~/code/my-app`, branch `PROJ-123-add_endpoint`
+→ worktree at `~/code/my-app-PROJ-123-add_endpoint/`.
+
+### Lifecycle
+
+| Phase | Command |
+|---|---|
+| `ticket-pickup-check` — create | `git worktree add <path> -b <branch-name>` |
+| Development | All implementation work happens inside `<path>` |
+| `workflow-resume` — verify | Check `git worktree list` matches `.claude/.current-worktree` |
+| `post-merge-close` — clean up | `git worktree remove <path>` + `git worktree prune` |
+
+### Worktree context resolution
+
+Skills resolve the active worktree path in this order:
+1. `$CLAUDE_CURRENT_WORKTREE` environment variable
+2. `.claude/.current-worktree` file in the main repo root (written by `ticket-pickup-check`)
+
+Add `.claude/.current-worktree` to `.gitignore`.
+
+---
+
 ## Release Operations Policy
 
 The external release workflow (automated tag creation, version bumping, changelog
@@ -572,6 +632,7 @@ and uncomment the variables you want to override.
 | `CLAUDE_DECISION_LOG_MAX_CONTEXT` | `500` | Max chars of context captured per entry |
 | `CLAUDE_ISSUE_TRACKER` | `github` | Which MCP to use for tickets: `github` or `clickup` |
 | `CLAUDE_CURRENT_TICKET` | _(from `.claude/.current-ticket`)_ | Active ticket ref; overrides file lookup |
+| `CLAUDE_CURRENT_WORKTREE` | _(from `.claude/.current-worktree`)_ | Active worktree path for the current ticket |
 | `CLAUDE_E2E_COMMAND` | _(unset)_ | Command to run E2E tests (e.g., `npx playwright test`) |
 | `CLAUDE_SKIP_AUDIT` | `0` | Set to `1` to disable command audit logging |
 | `CLAUDE_STALE_PR_DAYS` | `14` | Days of inactivity before a PR is considered stale |
@@ -655,7 +716,7 @@ can be resumed without restarting from zero.
 
 `ticket-pickup-check` writes the ticket ref to both on self-assign. Skills
 must never hardcode a ticket ref — always use the resolution order above.
-Add `.claude/.current-ticket` to `.gitignore`.
+Add `.claude/.current-ticket` and `.claude/.current-worktree` to `.gitignore`.
 
 ### Three-layer observability
 

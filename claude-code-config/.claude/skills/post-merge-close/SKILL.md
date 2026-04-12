@@ -117,20 +117,32 @@ Before each step, check if it was already completed:
 
 ### Phase 3 — Branch cleanup
 10. Skip if `_checkpoint_get branch_deleted` == "true".
-11. Delete the remote feature branch (detect the remote name — do not assume `origin`):
+11. Remove the git worktree for this ticket (must happen before branch deletion):
+    ```bash
+    WORKTREE_PATH=$(cat .claude/.current-worktree 2>/dev/null || echo "")
+    if [ -n "$WORKTREE_PATH" ] && git worktree list | grep -qF "$WORKTREE_PATH"; then
+        git worktree remove "$WORKTREE_PATH"
+    fi
+    git worktree prune
+    rm -f .claude/.current-worktree
+    ```
+    If `git worktree remove` fails (uncommitted changes remain), do not use
+    `--force`. Report to `dev-lead-agent` — all work must be committed before
+    the worktree is removed.
+12. Delete the remote feature branch (detect the remote name — do not assume `origin`):
     ```bash
     REMOTE=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null \
         | cut -d'/' -f1 || git remote | head -1 || echo "origin")
     git push "$REMOTE" --delete [feature-branch-name]
     ```
     Do not delete protected branches (`main`, `master`, `release/*`).
-12. Delete the local tracking branch (safe delete only):
+14. Delete the local tracking branch (safe delete only):
     ```bash
     git branch -d [feature-branch-name]
     ```
     If `-d` fails (branch not fully merged in local index), log and skip —
     do not use `-D`. Report to `dev-lead-agent`.
-13. Mark checkpoint: `_checkpoint_set branch_deleted true`
+15. Mark checkpoint: `_checkpoint_set branch_deleted true`
 
 ### Phase 4 — Notify reporter
 14. Skip if `_checkpoint_get reporter_notified` == "true".

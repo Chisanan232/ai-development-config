@@ -65,18 +65,32 @@ session is interrupted (crash, context limit, manual stop) and needs to continue
    bash ~/.claude/hooks/circuit-breaker-gate.sh check "$TICKET"
    ```
    If open: stop. Surface the same escalation block from Phase 1, step 6.
-9. Confirm the git branch matches the ticket's expected branch:
+9. Confirm the git worktree for this ticket is present and set `CLAUDE_CURRENT_WORKTREE`:
    ```bash
-   git branch --show-current
+   WORKTREE="${CLAUDE_CURRENT_WORKTREE:-$(cat .claude/.current-worktree 2>/dev/null || echo '')}"
+   if [ -n "$WORKTREE" ]; then
+     git worktree list | grep -qF "$WORKTREE" \
+       || echo "⚠️  Worktree path '$WORKTREE' not found in git worktree list — may need recreation"
+     export CLAUDE_CURRENT_WORKTREE="$WORKTREE"
+   else
+     echo "ℹ️  No worktree recorded for this ticket — development was in the main working tree"
+   fi
    ```
-10. Run `git fetch && git status` to confirm the branch is clean and not behind.
-11. If the working tree is dirty: identify the uncommitted changes.
+   If the worktree is missing and work is not yet complete, run `ticket-pickup-check`
+   again with `git worktree add "$WORKTREE_PATH" "$BRANCH_NAME"` (without `-b`) to
+   reattach to the existing branch.
+10. Confirm the git branch matches the ticket's expected branch:
+    ```bash
+    git branch --show-current
+    ```
+11. Run `git fetch && git status` to confirm the branch is clean and not behind.
+12. If the working tree is dirty: identify the uncommitted changes.
     - If they look like in-progress work from the interrupted session:
       review with the engineer before discarding or committing.
     - Do not run `git clean` or `git reset --hard` without explicit confirmation.
 
 ### Phase 3 — Determine resume point
-12. Map the recorded `step` and `workflow` to the correct phase:
+13. Map the recorded `step` and `workflow` to the correct phase:
 
     For `dev-impl-loop`:
     | step | Resume action |
@@ -90,7 +104,7 @@ session is interrupted (crash, context limit, manual stop) and needs to continue
 
     For other workflows: use the workflow's own phase-to-step mapping.
 
-13. Before re-entering, list what was already completed in this session:
+14. Before re-entering, list what was already completed in this session:
     ```
     Resuming [ticket-ref] at step [N] of [total].
     Completed: phases 0..N-1
@@ -98,10 +112,10 @@ session is interrupted (crash, context limit, manual stop) and needs to continue
     ```
 
 ### Phase 4 — Resume execution
-14. Re-invoke the appropriate skill or phase directly.
+15. Re-invoke the appropriate skill or phase directly.
     Do not restart from Phase 0 unless the environment check (Phase 2 of this
     skill) revealed the branch has been reset or re-created.
-15. Update the workflow state to reflect the resumed session:
+16. Update the workflow state to reflect the resumed session:
     ```bash
     bash ~/.claude/hooks/workflow-state.sh write \
       "[ticket-ref]" "[workflow]" "[step]" "[total]" "in_progress"
@@ -116,6 +130,7 @@ session is interrupted (crash, context limit, manual stop) and needs to continue
 |---|---|
 | State file found | ✅ / ❌ not found |
 | Circuit breaker | ✅ closed / ❌ open |
+| Worktree | ✅ [worktree-path] / ℹ️ not recorded / ❌ missing |
 | Branch | ✅ [branch-name] / ❌ mismatch |
 | Working tree | ✅ clean / ⚠️ dirty — [files] |
 

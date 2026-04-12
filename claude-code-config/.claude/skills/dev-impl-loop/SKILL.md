@@ -25,24 +25,38 @@ If empty, stop and ask the engineer to run `ticket-pickup-check` first.
 ## Steps
 
 ### Phase 0 — Environment verification (before the loop starts)
-1. Load and surface prior session notes:
+1. Resolve the active worktree and change into it:
+   ```bash
+   WORKTREE="${CLAUDE_CURRENT_WORKTREE:-$(cat .claude/.current-worktree 2>/dev/null || echo '')}"
+   if [ -n "$WORKTREE" ] && [ -d "$WORKTREE" ]; then
+     cd "$WORKTREE"
+   elif [ -n "$WORKTREE" ]; then
+     echo "Worktree path '$WORKTREE' does not exist — run ticket-pickup-check first" >&2
+     exit 1
+   fi
+   # For new branches created by ticket-pickup-check, no upstream exists yet.
+   # Pull only when an upstream tracking branch is configured:
+   UPSTREAM_REMOTE=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null | cut -d'/' -f1 || echo "")
+   ```
+2. Load and surface prior session notes:
    ```bash
    bash ~/.claude/hooks/session-memory.sh read "$TICKET"
    ```
    Review any recorded decisions, partial work, or blockers before proceeding.
    Do not repeat steps already logged as complete in session notes.
-2. Confirm the circuit breaker for this ticket is in "closed" state:
+3. Confirm the circuit breaker for this ticket is in "closed" state:
    ```bash
    bash ~/.claude/hooks/circuit-breaker-gate.sh check "$TICKET"
    ```
-3. Pull from the branch's configured upstream (not a hardcoded remote name):
+4. Pull from the branch's configured upstream when one exists:
    ```bash
-   UPSTREAM_REMOTE=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null | cut -d'/' -f1)
-   git fetch "${UPSTREAM_REMOTE:-origin}" --quiet
-   git pull --rebase
+   if [ -n "$UPSTREAM_REMOTE" ]; then
+     git fetch "$UPSTREAM_REMOTE" --quiet
+     git pull --rebase
+   fi
    ```
-4. Confirm working directory is clean (no stale changes from a previous session).
-5. Update workflow state: step 1 of 5.
+5. Confirm working directory is clean (no stale changes from a previous session).
+6. Update workflow state: step 1 of 5.
    ```bash
    bash ~/.claude/hooks/workflow-state.sh write \
      "$TICKET" "dev-impl-loop" "1" "5" "in_progress"
