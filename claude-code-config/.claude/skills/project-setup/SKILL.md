@@ -117,6 +117,8 @@ explicitly refreshing stale configuration — it will overwrite existing content
      || echo ".claude/.current-ticket" >> .gitignore
    grep -q "^\.claude/\.current-worktree" .gitignore 2>/dev/null \
      || echo ".claude/.current-worktree" >> .gitignore
+   grep -q "^\.claude/\.current-release" .gitignore 2>/dev/null \
+     || echo ".claude/.current-release" >> .gitignore
    ```
 8. Verify the hook chain is reachable:
    ```bash
