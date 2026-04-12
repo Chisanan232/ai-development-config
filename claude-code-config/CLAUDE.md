@@ -573,26 +573,49 @@ stays clean and multiple tickets can be worked on concurrently without branch-sw
 
 ### Branch naming convention
 
-All feature and fix branches must follow this format:
+All feature and fix branches must follow this four-part format:
 
 ```
-<ticket-number>-<short-summary>
+<release-or-phase>/<ticket-number>/<type>/<short-summary>
 ```
 
-- `<ticket-number>`: the exact issue/ticket reference (e.g., `PROJ-123`, `42`)
+- `<release-or-phase>`: milestone or sprint identifier — resolve from the ticket's
+  milestone/sprint field, `$CLAUDE_CURRENT_RELEASE` env var, or
+  `.claude/.current-release` file. Examples: `v0.1.0`, `phase1`, `sprint3`.
+- `<ticket-number>`: exact ticket reference (e.g., `TEST-1`, `PROJ-123`, `42`)
+- `<type>`: GitEmoji category slug matching the primary change type:
+
+  | Type | GitEmoji | When to use |
+  |---|---|---|
+  | `feat` | ✨ | New feature or capability |
+  | `fix` | 🐛 | Bug fix |
+  | `refactor` | ♻️ | Refactor with no behavior change |
+  | `test` | ✅ | Test-only change |
+  | `docs` | 📝 | Documentation change |
+  | `config` | 🔧 | Configuration change |
+  | `deps` | ⬆️ | Dependency upgrade |
+  | `remove` | 🗑️ | Deletion or removal |
+  | `lint` | 🚨 | Lint or type error fix |
+
 - `<short-summary>`: 2–4 words from the ticket title in `snake_case`, max 30 characters
-- Examples: `PROJ-123-add_new_endpoint`, `42-fix_auth_token_refresh`
+
+Examples:
+- `v0.1.0/TEST-1/feat/add_new_endpoint`
+- `phase1/PROJ-123/fix/auth_token_refresh`
+- `sprint3/42/refactor/extract_payment_service`
 
 ### Worktree path convention
 
-Worktrees are created as sibling directories of the main repository:
+Worktrees are created as sibling directories of the main repository.
+Because the branch name contains `/` separators, replace each `/` with `-`
+when forming the directory name:
 
 ```
-<repo-parent-dir>/<repo-name>-<branch-name>/
+<repo-parent-dir>/<repo-name>-<release-or-phase>-<ticket-number>-<type>-<short-summary>/
 ```
 
-Example: main repo at `~/code/my-app`, branch `PROJ-123-add_endpoint`
-→ worktree at `~/code/my-app-PROJ-123-add_endpoint/`.
+Example: main repo at `~/code/my-app`, branch `v0.1.0/TEST-1/feat/add_endpoint`
+→ worktree at `~/code/my-app-v0.1.0-TEST-1-feat-add_endpoint/`.
 
 ### Lifecycle
 
@@ -609,7 +632,12 @@ Skills resolve the active worktree path in this order:
 1. `$CLAUDE_CURRENT_WORKTREE` environment variable
 2. `.claude/.current-worktree` file in the main repo root (written by `ticket-pickup-check`)
 
-Add `.claude/.current-worktree` to `.gitignore`.
+Skills resolve the release or phase prefix in this order:
+1. `$CLAUDE_CURRENT_RELEASE` environment variable
+2. `.claude/.current-release` file in the main repo root (written by `ticket-pickup-check`)
+3. The ticket's milestone or sprint field via the issue tracker MCP
+
+Add `.claude/.current-worktree` and `.claude/.current-release` to `.gitignore`.
 
 ---
 
@@ -662,6 +690,7 @@ and uncomment the variables you want to override.
 | `CLAUDE_ISSUE_TRACKER` | `github` | Which MCP to use for tickets: `github` or `clickup` |
 | `CLAUDE_CURRENT_TICKET` | _(from `.claude/.current-ticket`)_ | Active ticket ref; overrides file lookup |
 | `CLAUDE_CURRENT_WORKTREE` | _(from `.claude/.current-worktree`)_ | Active worktree path for the current ticket |
+| `CLAUDE_CURRENT_RELEASE` | _(from `.claude/.current-release`)_ | Release or phase prefix for branch naming (e.g., `v0.1.0`, `phase1`); overrides file lookup |
 | `CLAUDE_E2E_COMMAND` | _(unset)_ | Command to run E2E tests (e.g., `npx playwright test`) |
 | `CLAUDE_SKIP_AUDIT` | `0` | Set to `1` to disable command audit logging |
 | `CLAUDE_STALE_PR_DAYS` | `14` | Days of inactivity before a PR is considered stale |
@@ -745,7 +774,7 @@ can be resumed without restarting from zero.
 
 `ticket-pickup-check` writes the ticket ref to both on self-assign. Skills
 must never hardcode a ticket ref — always use the resolution order above.
-Add `.claude/.current-ticket` and `.claude/.current-worktree` to `.gitignore`.
+Add `.claude/.current-ticket`, `.claude/.current-worktree`, and `.claude/.current-release` to `.gitignore`.
 
 ### Three-layer observability
 
