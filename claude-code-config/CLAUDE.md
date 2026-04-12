@@ -206,6 +206,35 @@ Every commit must be:
 | `🗑️` | Delete / remove |
 | `🚨` | Fix linting / type errors |
 
+### Commit granularity during implementation
+
+Each commit must represent **one identifiable unit of work** — small enough that
+a human reviewer can understand exactly what changed and why by reading the subject
+line alone. This is the primary mechanism by which humans trace the LLM's reasoning
+and verify its implementation footprint.
+
+**One commit per:**
+
+| Unit | Example subject line |
+|---|---|
+| New data model or enum | `✨ model(user): Add UserRole enum with ADMIN, MEMBER, GUEST` |
+| New class or object | `✨ repo(user): Add UserRepository with find_by_id and save` |
+| New function or method | `✨ service(auth): Add generate_token() for JWT creation` |
+| Bug fix | `🐛 auth(token): Fix expiry check using UTC instead of local time` |
+| Requirement adjustment | `♻️ api(user): Change email field to optional per updated spec` |
+| Single refactoring step | `♻️ service(payment): Extract charge logic into _build_charge()` |
+| Test suite for one unit | `✅ test(user): Add UserRepository CRUD tests` |
+| Configuration change | `🔧 config(db): Set pool_size=10 for production connection pool` |
+
+**Never bundle in one commit:**
+- A new class and its tests (two separate commits)
+- Two unrelated bug fixes
+- A feature and a refactor of surrounding code
+
+**Why this matters:** A well-granulated commit history lets engineers reconstruct
+the LLM's implementation logic step by step — what it added, in what order, and
+why each piece was introduced. A monolithic commit obscures all of that.
+
 ### What not to commit
 
 - `.env` files or secrets of any kind
