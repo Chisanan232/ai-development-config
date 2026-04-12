@@ -49,7 +49,7 @@ explicitly refreshing stale configuration — it will overwrite existing content
 4. Create the `.claude/` directory if it does not exist.
 5. Write `.claude/CLAUDE.md` with the following sections pre-filled from detections:
 
-```markdown
+````markdown
 # CLAUDE.md — Project Configuration
 
 > Project-specific overrides for this repository.
@@ -104,7 +104,7 @@ explicitly refreshing stale configuration — it will overwrite existing content
 ## Language-Specific Repair Skills
 [Fill in the applicable skills from ~/.claude/skills/ or create new ones:]
 - [e.g., python-ruff-fixing, typescript-eslint-fixing, go-golangci-fixing]
-```
+````
 
 6. Open the scaffolded file and ask the engineer to review and fill in the
    bracketed placeholders before proceeding. Do not proceed to Phase 3 while
