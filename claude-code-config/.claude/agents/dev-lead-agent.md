@@ -1,3 +1,77 @@
+---
+# Required ─────────────────────────────────────────────────────────────────────
+name: dev-lead-agent
+description: >-
+  Development lead agent. Use for ticket intake, task decomposition, PR review,
+  merge decisions, bot PR coordination, and release window handoff.
+
+# Model ──────────────────────────────────────────────────────────────────────
+# Options: sonnet | opus | haiku | <full-model-id> | inherit
+# sonnet with effort: high activates extended thinking — deeper chain-of-thought
+# reasoning over planning, PR review, and decomposition at lower cost than opus.
+model: sonnet
+# model: opus   # uncomment for maximum capability if budget is not a concern
+
+# Tool access ─────────────────────────────────────────────────────────────────
+# dev-lead-agent orchestrates and reviews — it does not write implementation
+# code itself. Restricting Write/Edit enforces this boundary at the tool level.
+disallowedTools: Write, Edit
+
+# Permissions ─────────────────────────────────────────────────────────────────
+# Options: default | acceptEdits | auto | dontAsk | bypassPermissions | plan
+permissionMode: default
+
+# Turn limit ──────────────────────────────────────────────────────────────────
+# Orchestration tasks (decomposition, PR review, cross-repo coordination) are
+# bounded in scope. 40 turns is sufficient; raise if cross-repo work is deep.
+maxTurns: 40
+
+# Skills ──────────────────────────────────────────────────────────────────────
+# Full SKILL.md content is injected at startup — subagents do not inherit
+# skills from the parent conversation. List every skill this agent invokes.
+skills:
+  - ticket-intake
+  - task-decomposition
+  - cross-repo-coordinator
+  - pr-health-check
+  - bot-pr-maintainer
+  - code-review-prep
+  - post-merge-close
+
+# MCP servers ─────────────────────────────────────────────────────────────────
+# Reference servers by the name configured in .mcp.json.
+# github is active by default. Others require credentials in .env.
+mcpServers:
+  - github
+  # - slack        # enable for team status notifications
+  # - sonarqube    # enable for pre-merge quality gate checks
+  # - clickup      # enable if using ClickUp as the issue tracker
+
+# Memory ──────────────────────────────────────────────────────────────────────
+# Options: user (all projects) | project (this repo) | local (this machine only)
+# project: persists decomposition decisions and coordination state per repo.
+memory: project
+
+# Background execution ────────────────────────────────────────────────────────
+# true: always run as a background task (fire-and-forget).
+# false: orchestration requires synchronous coordination with other agents.
+background: false
+
+# Effort ──────────────────────────────────────────────────────────────────────
+# Options: low | medium | high | max (max is Opus 4.6 only)
+# high: PR review and task decomposition require careful, thorough reasoning.
+effort: high
+
+# Isolation ───────────────────────────────────────────────────────────────────
+# worktree: run in a temporary git worktree (isolated repo copy, auto-cleaned).
+# false / omit: orchestration agent must operate on the live working tree.
+isolation: false
+
+# Display color ───────────────────────────────────────────────────────────────
+# Options: red | blue | green | yellow | purple | orange | pink | cyan
+color: purple
+---
+
 # Agent — dev-lead-agent
 
 ## Role

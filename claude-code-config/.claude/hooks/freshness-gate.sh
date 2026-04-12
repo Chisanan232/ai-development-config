@@ -50,8 +50,11 @@ if [ "$IS_MUTATION" -eq 0 ]; then
 fi
 
 # Resolve the tracking remote for the current branch (not hardcoded 'origin').
+# The || echo "" guard is required: with set -euo pipefail, if git rev-parse fails
+# (no upstream configured) the pipeline exits non-zero, which would cause set -e
+# to terminate the script before the null-guard below can run.
 REMOTE=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null \
-    | cut -d'/' -f1)
+    | cut -d'/' -f1 || echo "")
 
 if [ -z "$REMOTE" ]; then
     # No upstream configured — cannot check freshness, proceed.

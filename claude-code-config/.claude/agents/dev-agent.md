@@ -1,3 +1,85 @@
+---
+# Required ─────────────────────────────────────────────────────────────────────
+name: dev-agent
+description: >-
+  Implementation agent. Use for code writing, test writing, local validation,
+  and focused CI repair on concrete decomposed tasks.
+
+# Model ──────────────────────────────────────────────────────────────────────
+# Options: sonnet | opus | haiku | <full-model-id> | inherit
+# sonnet: good balance of speed and capability for iterative implementation work.
+model: sonnet
+
+# Tool access ─────────────────────────────────────────────────────────────────
+# tools: allowlist — only these tools are available (omit to inherit all).
+# disallowedTools: denylist — removed from inherited or specified list.
+# dev-agent needs the full toolset: read, write, edit, run commands, search.
+# Omitting both fields inherits all tools from the parent conversation.
+# disallowedTools: []   # no restrictions
+
+# Permissions ─────────────────────────────────────────────────────────────────
+# Options: default | acceptEdits | auto | dontAsk | bypassPermissions | plan
+permissionMode: default
+
+# Turn limit ──────────────────────────────────────────────────────────────────
+# Maximum agentic turns before the subagent stops. Implementation tasks
+# (multi-file changes, full test loop, pre-commit repair) can be long.
+maxTurns: 80
+
+# Skills ──────────────────────────────────────────────────────────────────────
+# Full SKILL.md content is injected at startup — subagents do not inherit
+# skills from the parent conversation. List every skill this agent invokes.
+skills:
+  - ticket-pickup-check
+  - dev-impl-loop
+  - feature-implementation
+  - test-design
+  - ci-failure-triage
+  - pr-feedback-response
+  - workflow-resume
+  # Language-specific repair skills — add the ones that match your stack:
+  # - python-pytest-failure-debugging
+  # - python-ruff-fixing
+  # - python-mypy-debugging
+  # - python-precommit-repair
+  # - typescript-tsc-debugging
+  # - typescript-eslint-fixing
+  # - node-precommit-repair
+  # - go-vet-debugging
+  # - go-golangci-fixing
+
+# MCP servers ─────────────────────────────────────────────────────────────────
+# Reference servers by the name configured in .mcp.json.
+# github is active by default. sonarqube requires credentials in .env.
+mcpServers:
+  - github
+  # - sonarqube   # enable for pre-commit quality gate feedback
+
+# Memory ──────────────────────────────────────────────────────────────────────
+# Options: user (all projects) | project (this repo) | local (this machine only)
+# project: persists implementation notes and decisions within this repository.
+memory: project
+
+# Background execution ────────────────────────────────────────────────────────
+# true: always run as a background task (fire-and-forget).
+# false: runs in the foreground; caller waits for completion.
+background: false
+
+# Effort ──────────────────────────────────────────────────────────────────────
+# Options: low | medium | high | max (max is Opus 4.6 only)
+# medium: standard implementation effort; increase to high for complex refactors.
+effort: medium
+
+# Isolation ───────────────────────────────────────────────────────────────────
+# worktree: run in a temporary git worktree (isolated repo copy, auto-cleaned).
+# false / omit: run in the main working directory.
+isolation: false
+
+# Display color ───────────────────────────────────────────────────────────────
+# Options: red | blue | green | yellow | purple | orange | pink | cyan
+color: blue
+---
+
 # Agent — dev-agent
 
 ## Role

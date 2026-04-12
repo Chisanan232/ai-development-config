@@ -80,10 +80,15 @@ FRONTMATTER
         ;;
 
     list)
-        if [ -z "$(ls -A "$NOTES_DIR" 2>/dev/null)" ]; then
+        # Use find instead of a glob+ls pipeline. With set -euo pipefail,
+        # "ls $DIR/*.md" fails (and exits the script) if no .md files exist,
+        # even when $DIR has other files — the glob passes a literal "*.md"
+        # argument to ls, which exits non-zero.
+        md_files=$(find "$NOTES_DIR" -maxdepth 1 -name "*.md" 2>/dev/null | sort)
+        if [ -z "$md_files" ]; then
             echo "(no session notes found)"
         else
-            ls "$NOTES_DIR"/*.md 2>/dev/null | xargs -I{} basename {} .md
+            echo "$md_files" | xargs -I{} basename {} .md
         fi
         ;;
 

@@ -1,3 +1,72 @@
+---
+# Required ─────────────────────────────────────────────────────────────────────
+name: qa-agent
+description: >-
+  Quality validation agent. Use to verify acceptance criteria, identify
+  regressions, and perform edge-case and adversarial testing before a PR
+  is merged.
+
+# Model ──────────────────────────────────────────────────────────────────────
+# Options: sonnet | opus | haiku | <full-model-id> | inherit
+# sonnet: sufficient for structured validation. Upgrade to opus if acceptance
+# criteria are complex or require nuanced judgment.
+model: sonnet
+
+# Tool access ─────────────────────────────────────────────────────────────────
+# qa-agent validates from the outside in — it must not write implementation
+# code. Write and Edit are disallowed to enforce this boundary at the tool level.
+# Bash is kept for running the test suite and E2E commands.
+disallowedTools: Write, Edit
+
+# Permissions ─────────────────────────────────────────────────────────────────
+# Options: default | acceptEdits | auto | dontAsk | bypassPermissions | plan
+permissionMode: default
+
+# Turn limit ──────────────────────────────────────────────────────────────────
+# Acceptance validation covers happy paths, adversarial inputs, and regression
+# checks — 40 turns is sufficient for most tickets.
+maxTurns: 40
+
+# Skills ──────────────────────────────────────────────────────────────────────
+# Full SKILL.md content is injected at startup — subagents do not inherit
+# skills from the parent conversation.
+skills:
+  - acceptance-validation
+
+# MCP servers ─────────────────────────────────────────────────────────────────
+# Reference servers by the name configured in .mcp.json.
+# github is active by default. Others require credentials in .env.
+mcpServers:
+  - github
+  # - codecov      # enable for coverage trend assessment
+  # - playwright   # enable for browser/UI acceptance tests
+
+# Memory ──────────────────────────────────────────────────────────────────────
+# Options: user (all projects) | project (this repo) | local (this machine only)
+# project: persists validation verdicts and known edge cases per repository.
+memory: project
+
+# Background execution ────────────────────────────────────────────────────────
+# true: always run as a background task (fire-and-forget).
+# false: dev-agent must wait for the QA verdict before opening a PR.
+background: false
+
+# Effort ──────────────────────────────────────────────────────────────────────
+# Options: low | medium | high | max (max is Opus 4.6 only)
+# high: thorough adversarial and edge-case coverage is the entire purpose
+# of this agent — do not reduce effort here.
+effort: high
+
+# Isolation ───────────────────────────────────────────────────────────────────
+# worktree: run in a temporary git worktree (isolated repo copy, auto-cleaned).
+# false / omit: QA runs against the same working tree as dev-agent.
+isolation: false
+
+# Display color ───────────────────────────────────────────────────────────────
+# Options: red | blue | green | yellow | purple | orange | pink | cyan
+color: green
+---
+
 # Agent — qa-agent
 
 ## Role
