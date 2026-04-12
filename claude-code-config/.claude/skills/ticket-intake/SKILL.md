@@ -21,8 +21,8 @@ already passed through intake.
 ## Steps
 
 ### Phase 1 — Scan for new tickets
-1. Use GitHub MCP (`issue_tracking`) or ClickUp MCP to list all tickets
-   in "New", "Open", or "Backlog" state with no current assignee.
+1. Use the `CLAUDE_ISSUE_TRACKER`-routed MCP (`github`, `clickup`, or `jira`) to list
+   all tickets in "New", "Open", or "Backlog" state with no current assignee.
 2. Filter to tickets in the current sprint or milestone (if one is active).
 3. Sort by: blocker urgency first, then milestone deadline, then creation date.
 4. Select the highest-priority ticket to process. Process one at a time.

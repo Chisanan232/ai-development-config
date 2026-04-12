@@ -338,7 +338,7 @@ When an MCP-backed capability is available for a task, prefer it over manual
 approximation. When it is not available, proceed without it and note the gap.
 
 **Active vs opt-in servers:** `fetch` and `github` are active by default.
-All other servers (`sonarqube`, `playwright`, `slack`, `clickup`, `codecov`, `datadog`)
+All other servers (`sonarqube`, `playwright`, `slack`, `clickup`, `jira`, `codecov`, `datadog`)
 are disabled by default and must be enabled per-project in the project's `.mcp.json`
 or by setting their required credentials in the environment.
 
@@ -659,7 +659,7 @@ and uncomment the variables you want to override.
 | `CLAUDE_DECISION_LOG_DIR` | `~/.claude/decisions` | Structured decision log (daily JSONL) |
 | `CLAUDE_DECISION_LOG_ENABLED` | `1` | Set to `0` to disable the decision log |
 | `CLAUDE_DECISION_LOG_MAX_CONTEXT` | `500` | Max chars of context captured per entry |
-| `CLAUDE_ISSUE_TRACKER` | `github` | Which MCP to use for tickets: `github` or `clickup` |
+| `CLAUDE_ISSUE_TRACKER` | `github` | Which MCP to use for tickets: `github`, `clickup`, or `jira` |
 | `CLAUDE_CURRENT_TICKET` | _(from `.claude/.current-ticket`)_ | Active ticket ref; overrides file lookup |
 | `CLAUDE_CURRENT_WORKTREE` | _(from `.claude/.current-worktree`)_ | Active worktree path for the current ticket |
 | `CLAUDE_E2E_COMMAND` | _(unset)_ | Command to run E2E tests (e.g., `npx playwright test`) |
