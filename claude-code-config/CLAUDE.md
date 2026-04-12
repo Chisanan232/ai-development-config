@@ -304,7 +304,7 @@ or by setting their required credentials in the environment.
 
 ## Time-Layer Design — Skill-First Polling and Scheduling
 
-Claude Code may run recurring tasks using `/loop` or a scheduler. The rule is:
+Claude Code may run recurring tasks using the `CronCreate` tool or manual periodic invocation. The rule is:
 **prefer waking narrow skills, not full agents, for polling and status checks.**
 
 ### Default rule
@@ -330,11 +330,13 @@ Claude Code may run recurring tasks using `/loop` or a scheduler. The rule is:
 
 ### How to configure
 
-Use `/loop <interval> /pr-health-check` to start a recurring PR health check.
-Use `/loop <interval> /release-preparation` then `/loop <interval> /release-watch`
-during a release window.
+Use the `CronCreate` tool to schedule recurring skill invocations:
+- PR health check: schedule `/pr-health-check` at the 30-minute interval.
+- Release window: schedule `/release-preparation` then `/release-watch` at the 5-minute interval.
 
-Do not start a loop on a full agent (`dev-lead-agent`) for routine polling.
+Alternatively, invoke skills manually at the polling intervals listed above.
+
+Do not schedule a full agent (`dev-lead-agent`) for routine polling.
 Agents are stateful and expensive to wake repeatedly — use them only when
 the skill's output indicates a decision or coordination is needed.
 
