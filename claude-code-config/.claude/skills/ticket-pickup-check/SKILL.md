@@ -40,20 +40,29 @@ task. Must pass before `dev-impl-loop` begins.
 10. If the ticket is unassigned: proceed to Check 4.
 
 ### Check 4 — Branch, worktree, self-assign, and state transition
-11. Derive the branch name from the ticket reference and a short summary of the ticket title:
+11. Derive the branch name using the four-part format:
     ```
-    <ticket-number>-<short-summary>
+    <release-or-phase>/<ticket-number>/<type>/<short-summary>
     ```
-    - `<ticket-number>`: exact ticket reference (e.g., `PROJ-123`, `42`).
+    - `<release-or-phase>`: resolve in order — `$CLAUDE_CURRENT_RELEASE` env var,
+      `.claude/.current-release` file, or the ticket's milestone/sprint field
+      from the issue tracker. Examples: `v0.1.0`, `phase1`, `sprint3`.
+    - `<ticket-number>`: exact ticket reference (e.g., `TEST-1`, `PROJ-123`, `42`).
+    - `<type>`: GitEmoji category slug for the primary change type —
+      `feat`, `fix`, `refactor`, `test`, `docs`, `config`, `deps`, `remove`, `lint`.
     - `<short-summary>`: 2–4 words from the ticket title in `snake_case`, max 30 characters.
-    - Example: `PROJ-123-add_new_endpoint`
+    - Examples: `v0.1.0/TEST-1/feat/add_new_endpoint`, `phase1/PROJ-123/fix/auth_token_refresh`
 
 12. Create a git worktree and branch for this ticket:
     ```bash
     REPO_ROOT=$(git rev-parse --show-toplevel)
     REPO_NAME=$(basename "$REPO_ROOT")
-    BRANCH_NAME="[ticket-number]-[short-summary]"   # e.g. PROJ-123-add_new_endpoint
-    WORKTREE_PATH="${REPO_ROOT}/../${REPO_NAME}-${BRANCH_NAME}"
+    BRANCH_NAME="[release-or-phase]/[ticket-number]/[type]/[short-summary]"
+    # e.g. v0.1.0/TEST-1/feat/add_new_endpoint
+
+    # Worktree path: replace '/' with '-' to avoid creating nested directories
+    WORKTREE_SUFFIX=$(echo "$BRANCH_NAME" | tr '/' '-')
+    WORKTREE_PATH="${REPO_ROOT}/../${REPO_NAME}-${WORKTREE_SUFFIX}"
 
     # Create the worktree and branch (-b creates a new branch):
     git worktree add "$WORKTREE_PATH" -b "$BRANCH_NAME"
@@ -70,20 +79,23 @@ task. Must pass before `dev-impl-loop` begins.
     Worktree: [worktree-path]
     ```
 
-16. **Bind the ticket reference and worktree path** to the current session:
+16. **Bind the ticket reference, release prefix, and worktree path** to the current session:
     ```bash
     # In the MAIN repo — write context files for cross-session reference
     mkdir -p .claude
-    echo "[ticket-ref]" > .claude/.current-ticket
-    echo "$WORKTREE_PATH" > .claude/.current-worktree
+    echo "[ticket-ref]"        > .claude/.current-ticket
+    echo "$WORKTREE_PATH"      > .claude/.current-worktree
+    echo "[release-or-phase]"  > .claude/.current-release
 
     # In the WORKTREE — write the ticket context so skills work from inside it
     mkdir -p "${WORKTREE_PATH}/.claude"
-    echo "[ticket-ref]" > "${WORKTREE_PATH}/.claude/.current-ticket"
+    echo "[ticket-ref]"       > "${WORKTREE_PATH}/.claude/.current-ticket"
+    echo "[release-or-phase]" > "${WORKTREE_PATH}/.claude/.current-release"
 
     # Export for the current shell session
     export CLAUDE_CURRENT_TICKET="[ticket-ref]"
     export CLAUDE_CURRENT_WORKTREE="$WORKTREE_PATH"
+    export CLAUDE_CURRENT_RELEASE="[release-or-phase]"
     ```
     All subsequent development work happens inside `$WORKTREE_PATH`.
 
@@ -136,8 +148,9 @@ fi
 WORKTREE="${CLAUDE_CURRENT_WORKTREE:-$(cat .claude/.current-worktree 2>/dev/null || echo '')}"
 ```
 
-Ensure `.claude/.current-ticket` and `.claude/.current-worktree` are listed
-in `.gitignore` — they are session state, not source code.
+Ensure `.claude/.current-ticket`, `.claude/.current-worktree`, and
+`.claude/.current-release` are listed in `.gitignore` — they are session
+state, not source code.
 
 ## Safe-Fix Guidance
 - Never bypass the state check — implementing a "New" or "Backlog" ticket
