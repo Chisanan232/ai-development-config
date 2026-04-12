@@ -7,9 +7,10 @@ description: >-
 
 # Model ──────────────────────────────────────────────────────────────────────
 # Options: sonnet | opus | haiku | <full-model-id> | inherit
-# opus: strategic planning, PR review, and decomposition benefit from the most
-# capable model. Downgrade to sonnet if latency is a concern.
-model: opus
+# sonnet with effort: high activates extended thinking — deeper chain-of-thought
+# reasoning over planning, PR review, and decomposition at lower cost than opus.
+model: sonnet
+# model: opus   # uncomment for maximum capability if budget is not a concern
 
 # Tool access ─────────────────────────────────────────────────────────────────
 # dev-lead-agent orchestrates and reviews — it does not write implementation
