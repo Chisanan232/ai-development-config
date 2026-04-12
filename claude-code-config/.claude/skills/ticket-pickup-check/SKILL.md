@@ -18,7 +18,8 @@ task. Must pass before `dev-impl-loop` begins.
 ## Steps
 
 ### Check 1 — Ticket workflow state
-1. Fetch the ticket's current state from the issue tracker (GitHub MCP or ClickUp MCP).
+1. Fetch the ticket's current state from the `CLAUDE_ISSUE_TRACKER`-routed MCP
+   (`github`, `clickup`, or `jira`). Only query one provider.
 2. Acceptable states: "Accepted", "Ready for Dev", "In Sprint".
 3. Unacceptable states: "New", "Open", "Backlog", "Blocked", "In Review", "Done", "Closed".
 4. If the state is not acceptable: **stop immediately**.
