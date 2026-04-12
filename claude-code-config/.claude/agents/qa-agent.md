@@ -131,7 +131,8 @@ is implemented.
 
 ## Issue tracker routing
 Read `CLAUDE_ISSUE_TRACKER` (default: `github`) to determine which MCP
-server to use for ticket operations. Only query one provider.
+server to use for ticket operations. Valid values: `github`, `clickup`, `jira`.
+Only query one provider — never fan out across multiple trackers.
 
 ## Skills used
 - `acceptance-validation`
