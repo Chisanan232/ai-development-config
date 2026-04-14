@@ -86,7 +86,7 @@
       "command": "docker"
     },
     "jira": {
-      "serverUrl": "http://localhost:8100/mcp",
+      "serverUrl": "http://localhost:8100/sse",
       "disabled": true,
       "metadata": {
         "capability": "issue_tracking",
@@ -97,7 +97,7 @@
       }
     },
     "clickup": {
-      "serverUrl": "http://localhost:8101/mcp/mcp",
+      "serverUrl": "http://localhost:8101/sse/sse",
       "disabled": true,
       "metadata": {
         "capability": "issue_tracking",
