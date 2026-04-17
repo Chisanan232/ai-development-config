@@ -1,0 +1,77 @@
+site_name: AI Development Config
+site_description: Multi-tool AI coding assistant configuration kit — Claude Code, Codex CLI, Windsurf Cascade, GitHub Copilot
+site_url: https://chisanan232.github.io/ai-development-config/
+repo_url: https://github.com/Chisanan232/ai-development-config
+repo_name: Chisanan232/ai-development-config
+edit_uri: edit/master/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Tools:
+    - Overview: tools/index.md
+    - Claude Code: tools/claude-code.md
+    - Codex CLI: tools/codex.md
+    - Windsurf Cascade: tools/windsurf.md
+    - GitHub Copilot: tools/copilot.md
+  - Shared Policies:
+    - Overview: shared/index.md
+    - Coding Standards: shared/coding-standards.md
+    - Commit Policy: shared/commit-policy.md
+    - PR Policy: shared/pr-policy.md
+    - Branch Naming: shared/branch-naming.md
+    - Testing Philosophy: shared/testing-philosophy.md
+  - Install Script: install.md
+  - Architecture: architecture.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search

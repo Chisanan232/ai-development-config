@@ -1,0 +1,110 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# ── Project metadata ──────────────────────────────────────────────────────────
+
+[project]
+name = "ai-development-config"
+version = "0.1.0"
+description = "Multi-tool AI coding assistant configuration kit — Claude Code, Codex CLI, Windsurf Cascade, GitHub Copilot"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.8"
+
+# Runtime: zero dependencies — install.py uses stdlib only (pathlib, shutil, argparse)
+dependencies = []
+
+[project.scripts]
+# Developer-facing CLI: python -m install  OR  ai-config (after pip install -e .)
+ai-config = "install:main"
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.8",
+    "ruff>=0.4",
+    "isort>=5.13",
+    "pre-commit>=3.6",
+]
+docs = [
+    "mkdocs>=1.5",
+    "mkdocs-material>=9.5",
+]
+all = [
+    "ai-development-config[dev,docs]",
+]
+
+[project.urls]
+Repository = "https://github.com/Chisanan232/ai-development-config"
+Documentation = "https://chisanan232.github.io/ai-development-config/"
+Issues = "https://github.com/Chisanan232/ai-development-config/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["install"]
+
+# ── Ruff ──────────────────────────────────────────────────────────────────────
+# Ruff replaces flake8, pyupgrade, and covers import sorting (I rules).
+# isort is also included for editors that invoke it directly — see [tool.isort].
+
+[tool.ruff]
+target-version = "py38"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort — import ordering (use instead of standalone isort where possible)
+    "UP",   # pyupgrade — modernise syntax
+    "B",    # flake8-bugbear — likely bugs and design issues
+    "SIM",  # flake8-simplify — simpler code suggestions
+    "C4",   # flake8-comprehensions — better list/dict/set comprehensions
+    "PTH",  # flake8-use-pathlib — enforce pathlib over os.path
+    "RUF",  # ruff-specific rules
+]
+ignore = [
+    "E501",  # line too long — handled by the formatter; not a lint error here
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["install"]
+force-sort-within-sections = true
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+# ── isort ─────────────────────────────────────────────────────────────────────
+# Note: Ruff's "I" rule set covers import sorting and is preferred in CI.
+# isort is configured here for editors and pre-commit hooks that invoke it directly.
+# Keep line_length and profile in sync with [tool.ruff] settings above.
+
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = ["install"]
+force_sort_within_sections = true
+combine_as_imports = true
+
+# ── MyPy ──────────────────────────────────────────────────────────────────────
+
+[tool.mypy]
+python_version = "3.8"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+no_implicit_optional = true
+check_untyped_defs = true
+show_error_codes = true
+pretty = true
+
+# install.py uses stdlib only — no stubs needed
+[[tool.mypy.overrides]]
+module = "install"
+disallow_untyped_defs = true
